@@ -61,6 +61,8 @@ test("keeps editing, durable storage, backup, and responsive design capabilities
   assert.match(planner, /saveCurrentPage/);
   assert.match(planner, /페이지를 저장했습니다/);
   assert.match(planner, /page-save-button/);
+  assert.match(planner, /activeTab !== "overview"/);
+  assert.doesNotMatch(planner, />한눈에 저장</);
   assert.match(planner, /사이트에 자동 저장됩니다/);
   assert.match(planner, /downloadBackup/);
   assert.match(planner, /importBackup/);

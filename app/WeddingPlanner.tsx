@@ -513,7 +513,7 @@ export default function WeddingPlanner() {
           ))}
         </nav>
         <div className="header-actions">
-          <button className="page-save-button" disabled={!ready} onClick={saveCurrentPage}>{tabItems.find((tab) => tab.id === activeTab)?.label} 저장</button>
+          {activeTab !== "overview" && <button className="page-save-button" disabled={!ready} onClick={saveCurrentPage}>{tabItems.find((tab) => tab.id === activeTab)?.label} 저장</button>}
           <span className={`save-state save-state-${saveState}`}><i /> {saveStateLabels[saveState]}</span>
           <button className="header-link" onClick={downloadBackup}>백업</button>
           <button className="header-link" onClick={() => fileInputRef.current?.click()}>불러오기</button>
