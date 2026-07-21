@@ -178,6 +178,25 @@ export default function WeddingPlanner() {
     });
   }, [budgetQuery, categoryFilter, data.expenses]);
 
+  const payerSummaries = useMemo(() => {
+    const payers = ["상원", "공용", "영랑", "미지정"];
+    return payers.map((payer) => {
+      const expenses = data.expenses.filter((expense) => (expense.paidBy || "미지정") === payer);
+      const total = expenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+      const paid = expenses.reduce((sum, expense) => sum + Number(expense.paid || 0), 0);
+      return { payer, count: expenses.length, total, paid, remaining: total - paid, progress: total ? Math.round((paid / total) * 100) : 0 };
+    });
+  }, [data.expenses]);
+
+  const expenseGroups = useMemo(() => {
+    const grouped = new Map<string, Expense[]>();
+    visibleExpenses.forEach((expense) => {
+      const category = expense.category.trim() || "미분류";
+      grouped.set(category, [...(grouped.get(category) || []), expense]);
+    });
+    return [...grouped.entries()];
+  }, [visibleExpenses]);
+
   const visibleTasks = data.tasks.filter((task) => taskFilter === "all" || (taskFilter === "done" ? task.done : !task.done));
   const progress = totals.taskTotal ? Math.round((totals.taskDone / totals.taskTotal) * 100) : 0;
   const paidProgress = totals.total ? Math.min(100, Math.round((totals.paid / totals.total) * 100)) : 0;
@@ -369,30 +388,67 @@ export default function WeddingPlanner() {
                 <div><span>선결제</span><strong>{money.format(totals.paid)}</strong></div>
                 <div><span>남은 금액</span><strong>{money.format(totals.remaining)}</strong></div>
               </div>
+              <section className="payer-overview" aria-labelledby="payer-overview-title">
+                <div className="budget-subheading">
+                  <div><span className="section-kicker">PAYMENT BY PERSON</span><h3 id="payer-overview-title">결제자별 한눈에 보기</h3></div>
+                  <p>결제자를 지정하면 배정 예산과 실제 결제액이 자동으로 합산됩니다.</p>
+                </div>
+                <div className="payer-table-wrap">
+                  <table className="payer-table">
+                    <thead><tr><th>결제자</th><th>배정 항목</th><th>배정 예산</th><th>선결제</th><th>남은 금액</th><th>결제율</th></tr></thead>
+                    <tbody>
+                      {payerSummaries.map((summary) => (
+                        <tr key={summary.payer} className={`payer-${summary.payer === "미지정" ? "unassigned" : summary.payer}`}>
+                          <th scope="row"><span className="payer-dot" />{summary.payer}</th>
+                          <td>{summary.count}개</td>
+                          <td>{money.format(summary.total)}</td>
+                          <td>{money.format(summary.paid)}</td>
+                          <td>{money.format(summary.remaining)}</td>
+                          <td><div className="payer-progress"><i style={{ width: `${summary.progress}%` }} /></div><b>{summary.progress}%</b></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
               <div className="toolbar">
                 <label className="search-field"><span className="sr-only">지출 검색</span><input value={budgetQuery} onChange={(event) => setBudgetQuery(event.target.value)} placeholder="항목, 상태, 비고 검색" /></label>
                 <div className="filter-chips" aria-label="구분 필터">{categories.map((category) => <button key={category} className={categoryFilter === category ? "active" : ""} onClick={() => setCategoryFilter(category)}>{category}</button>)}</div>
               </div>
-              <div className="table-wrap">
-                <table className="editable-table budget-table">
-                  <thead><tr><th>구분</th><th>항목</th><th>진행여부</th><th>총예산</th><th>결제자</th><th>선결제</th><th>잔금</th><th>비고</th><th><span className="sr-only">삭제</span></th></tr></thead>
-                  <tbody>
-                    {visibleExpenses.map((expense) => (
-                      <tr key={expense.id}>
-                        <td><input aria-label={`${expense.item} 구분`} value={expense.category} onChange={(event) => updateExpense(expense.id, "category", event.target.value)} /></td>
-                        <td><input aria-label="항목" value={expense.item} onChange={(event) => updateExpense(expense.id, "item", event.target.value)} /></td>
-                        <td><input aria-label={`${expense.item} 진행여부`} value={expense.status} placeholder="미정" onChange={(event) => updateExpense(expense.id, "status", event.target.value)} /></td>
-                        <td><input className="number-input" aria-label={`${expense.item} 총예산`} type="number" min="0" value={expense.total || ""} onChange={(event) => updateExpense(expense.id, "total", Number(event.target.value))} /></td>
-                        <td><select aria-label={`${expense.item} 결제자`} value={expense.paidBy} onChange={(event) => updateExpense(expense.id, "paidBy", event.target.value)}><option value="">-</option><option>영랑</option><option>상원</option><option>공용</option></select></td>
-                        <td><input className="number-input" aria-label={`${expense.item} 선결제`} type="number" min="0" value={expense.paid || ""} onChange={(event) => updateExpense(expense.id, "paid", Number(event.target.value))} /></td>
-                        <td className="calculated">{number.format(expense.total - expense.paid)}</td>
-                        <td><input aria-label={`${expense.item} 비고`} value={expense.notes} onChange={(event) => updateExpense(expense.id, "notes", event.target.value)} /></td>
-                        <td><button className="icon-button" aria-label={`${expense.item} 삭제`} onClick={() => removeExpense(expense.id)}>×</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot><tr><td colSpan={3}>표시된 {visibleExpenses.length}개 항목</td><td>{number.format(visibleExpenses.reduce((sum, expense) => sum + expense.total, 0))}</td><td /><td>{number.format(visibleExpenses.reduce((sum, expense) => sum + expense.paid, 0))}</td><td>{number.format(visibleExpenses.reduce((sum, expense) => sum + expense.total - expense.paid, 0))}</td><td colSpan={2} /></tr></tfoot>
-                </table>
+              <div className="expense-groups">
+                {expenseGroups.map(([category, expenses], groupIndex) => {
+                  const groupTotal = expenses.reduce((sum, expense) => sum + expense.total, 0);
+                  const groupPaid = expenses.reduce((sum, expense) => sum + expense.paid, 0);
+                  return (
+                    <section className="expense-group" key={category} aria-labelledby={`expense-group-${groupIndex}`}>
+                      <div className="expense-group-heading">
+                        <div><span>{String(groupIndex + 1).padStart(2, "0")}</span><h3 id={`expense-group-${groupIndex}`}>{category}</h3><small>{expenses.length}개 항목</small></div>
+                        <dl><div><dt>예산</dt><dd>{money.format(groupTotal)}</dd></div><div><dt>선결제</dt><dd>{money.format(groupPaid)}</dd></div><div><dt>잔금</dt><dd>{money.format(groupTotal - groupPaid)}</dd></div></dl>
+                      </div>
+                      <div className="table-wrap">
+                        <table className="editable-table budget-table grouped-budget-table">
+                          <thead><tr><th>항목</th><th>진행여부</th><th>총예산</th><th>결제자</th><th>선결제</th><th>잔금</th><th>비고</th><th>분류 변경</th><th><span className="sr-only">삭제</span></th></tr></thead>
+                          <tbody>
+                            {expenses.map((expense) => (
+                              <tr key={expense.id}>
+                                <td><input aria-label="항목" value={expense.item} onChange={(event) => updateExpense(expense.id, "item", event.target.value)} /></td>
+                                <td><input aria-label={`${expense.item} 진행여부`} value={expense.status} placeholder="미정" onChange={(event) => updateExpense(expense.id, "status", event.target.value)} /></td>
+                                <td><input className="number-input" aria-label={`${expense.item} 총예산`} type="number" min="0" value={expense.total || ""} onChange={(event) => updateExpense(expense.id, "total", Number(event.target.value))} /></td>
+                                <td><select className={`payer-select payer-select-${expense.paidBy || "unassigned"}`} aria-label={`${expense.item} 결제자`} value={expense.paidBy} onChange={(event) => updateExpense(expense.id, "paidBy", event.target.value)}><option value="">미지정</option><option>상원</option><option>공용</option><option>영랑</option></select></td>
+                                <td><input className="number-input" aria-label={`${expense.item} 선결제`} type="number" min="0" value={expense.paid || ""} onChange={(event) => updateExpense(expense.id, "paid", Number(event.target.value))} /></td>
+                                <td className="calculated">{number.format(expense.total - expense.paid)}</td>
+                                <td><input aria-label={`${expense.item} 비고`} value={expense.notes} onChange={(event) => updateExpense(expense.id, "notes", event.target.value)} /></td>
+                                <td><input className="category-change" aria-label={`${expense.item} 구분`} value={expense.category} onChange={(event) => updateExpense(expense.id, "category", event.target.value)} /></td>
+                                <td><button className="icon-button" aria-label={`${expense.item} 삭제`} onClick={() => removeExpense(expense.id)}>×</button></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  );
+                })}
+                {expenseGroups.length === 0 && <p className="empty-budget-state">검색 조건에 맞는 예산 항목이 없습니다.</p>}
               </div>
             </section>
           )}

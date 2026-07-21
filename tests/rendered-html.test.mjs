@@ -51,6 +51,10 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /downloadBackup/);
   assert.match(planner, /importBackup/);
   assert.match(planner, /addExpense/);
+  assert.match(planner, /payerSummaries/);
+  assert.match(planner, /결제자별 한눈에 보기/);
+  assert.match(planner, /expenseGroups\.map/);
+  assert.match(planner, /분류 변경/);
   assert.match(planner, /addTask/);
   assert.match(planner, /updateVenue/);
   assert.match(planner, /updateRingChoice/);

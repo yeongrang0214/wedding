@@ -718,6 +718,170 @@ img {
   letter-spacing: -0.04em;
 }
 
+.payer-overview {
+  max-width: 1500px;
+  margin: 0 auto clamp(72px, 8vw, 110px);
+}
+
+.budget-subheading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.budget-subheading h3 {
+  margin: 10px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(29px, 3.2vw, 45px);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+}
+
+.budget-subheading p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.payer-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.payer-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.payer-table th,
+.payer-table td {
+  height: 68px;
+  padding: 0 20px;
+  border-right: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--line-light);
+  text-align: right;
+}
+
+.payer-table th:last-child,
+.payer-table td:last-child {
+  border-right: 0;
+}
+
+.payer-table thead th {
+  height: 42px;
+  background: var(--cream);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.payer-table thead th:first-child,
+.payer-table tbody th {
+  text-align: left;
+}
+
+.payer-table tbody tr:last-child th,
+.payer-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.payer-table tbody th {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.payer-table tbody td {
+  font-family: var(--serif);
+  font-size: 15px;
+}
+
+.payer-table tbody td:nth-child(2) {
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 10px;
+}
+
+.payer-table tbody td:last-child {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) 34px;
+  align-items: center;
+  gap: 12px;
+}
+
+.payer-table tbody td:last-child b {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.payer-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.payer-상원 .payer-dot,
+.payer-select-상원 {
+  background-color: rgba(162, 104, 87, 0.16) !important;
+}
+
+.payer-상원 .payer-dot {
+  background-color: var(--clay) !important;
+}
+
+.payer-공용 .payer-dot,
+.payer-select-공용 {
+  background-color: rgba(23, 24, 20, 0.1) !important;
+}
+
+.payer-공용 .payer-dot {
+  background-color: var(--ink) !important;
+}
+
+.payer-영랑 .payer-dot,
+.payer-select-영랑 {
+  background-color: rgba(100, 113, 91, 0.16) !important;
+}
+
+.payer-영랑 .payer-dot {
+  background-color: var(--sage-dark) !important;
+}
+
+.payer-unassigned {
+  color: var(--muted);
+  background: rgba(232, 224, 209, 0.38);
+}
+
+.payer-unassigned .payer-dot,
+.payer-select-unassigned {
+  background-color: #c8c2b7 !important;
+}
+
+.payer-progress {
+  height: 2px;
+  overflow: hidden;
+  background: var(--line-light);
+}
+
+.payer-progress i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
+
 .toolbar {
   display: flex;
   align-items: flex-start;
@@ -859,6 +1023,117 @@ img {
 .budget-table td:nth-child(7) { width: 120px; }
 .budget-table th:nth-child(9),
 .budget-table td:nth-child(9) { width: 46px; }
+
+.expense-groups {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.expense-group {
+  margin-top: clamp(62px, 7vw, 100px);
+}
+
+.expense-group:first-child {
+  margin-top: 50px;
+}
+
+.expense-group-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 22px;
+}
+
+.expense-group-heading > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.expense-group-heading > div:first-child > span {
+  color: var(--faint);
+  font-family: var(--serif);
+  font-size: 14px;
+}
+
+.expense-group-heading h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+.expense-group-heading small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.expense-group-heading dl {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: clamp(20px, 4vw, 64px);
+  margin: 0;
+}
+
+.expense-group-heading dl div {
+  text-align: right;
+}
+
+.expense-group-heading dt {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.expense-group-heading dd {
+  margin: 5px 0 0;
+  font-family: var(--serif);
+  font-size: 16px;
+}
+
+.grouped-budget-table {
+  min-width: 1190px;
+}
+
+.grouped-budget-table th:nth-child(1),
+.grouped-budget-table td:nth-child(1) { width: 155px; }
+.grouped-budget-table th:nth-child(2),
+.grouped-budget-table td:nth-child(2) { width: 112px; }
+.grouped-budget-table th:nth-child(3),
+.grouped-budget-table td:nth-child(3) { width: 130px; }
+.grouped-budget-table th:nth-child(4),
+.grouped-budget-table td:nth-child(4) { width: 92px; }
+.grouped-budget-table th:nth-child(5),
+.grouped-budget-table td:nth-child(5) { width: 125px; }
+.grouped-budget-table th:nth-child(6),
+.grouped-budget-table td:nth-child(6) { width: 125px; }
+.grouped-budget-table th:nth-child(7),
+.grouped-budget-table td:nth-child(7) { width: auto; }
+.grouped-budget-table th:nth-child(8),
+.grouped-budget-table td:nth-child(8) { width: 105px; }
+.grouped-budget-table th:nth-child(9),
+.grouped-budget-table td:nth-child(9) { width: 46px; }
+
+.payer-select {
+  padding-left: 12px !important;
+  font-weight: 600 !important;
+}
+
+.category-change {
+  color: var(--muted);
+  font-size: 10px !important;
+}
+
+.empty-budget-state {
+  margin: 50px 0 0;
+  padding: 50px 20px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  color: var(--muted);
+  text-align: center;
+}
 
 .calculated {
   padding: 0 10px !important;
@@ -1590,6 +1865,43 @@ img {
 
   .compact-metrics strong {
     margin-top: 10px;
+  }
+
+  .budget-subheading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .budget-subheading p {
+    text-align: left;
+  }
+
+  .payer-table th,
+  .payer-table td {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .expense-group-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .expense-group-heading dl {
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-light);
+  }
+
+  .expense-group-heading dl div:first-child {
+    text-align: left;
+  }
+
+  .expense-group-heading dd {
+    font-size: 14px;
   }
 
   .toolbar {
