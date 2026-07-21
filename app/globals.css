@@ -932,35 +932,15 @@ img {
   font-size: 8px;
 }
 
-.common-fund-stepper {
-  display: grid;
-  grid-template-columns: 25px minmax(0, 1fr) 25px;
-  align-items: stretch;
-  border-bottom: 1px solid var(--ink);
-}
-
-.common-fund-stepper input {
+.actual-spending-field input {
   width: 100%;
   padding: 5px 4px;
   border: 0;
+  border-bottom: 1px solid var(--ink);
   background: transparent;
   font-family: var(--serif);
   font-size: 14px;
   text-align: right;
-}
-
-.common-fund-stepper button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-family: var(--serif);
-  font-size: 15px;
-}
-
-.common-fund-stepper button:hover {
-  background: var(--sage);
-  color: var(--ink);
 }
 
 .actual-spending-confirm {

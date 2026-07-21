@@ -89,7 +89,7 @@ const DEFAULT_DATA: PlannerData = {
   ],
 };
 
-const cloneDefault = () => JSON.parse(JSON.stringify(DEFAULT_DATA)) as PlannerData;
+const cloneDefault = () => normalizePlannerData(JSON.parse(JSON.stringify(DEFAULT_DATA)) as PlannerData);
 const money = new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("ko-KR");
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -121,7 +121,10 @@ function normalizeTask(task: Task) {
 
 function normalizePlannerData(input: PlannerData): PlannerData {
   return {
-    expenses: input.expenses,
+    expenses: input.expenses.map((expense) => ({
+      ...expense,
+      status: Number(expense.paid || 0) > 0 ? "확정" : expense.status,
+    })),
     tasks: input.tasks.map(normalizeTask),
     commonFund: {
       sangwon: Number(input.commonFund?.sangwon || 0),
@@ -312,26 +315,27 @@ export default function WeddingPlanner() {
   const paidProgress = totals.total ? Math.min(100, Math.round((totals.paid / totals.total) * 100)) : 0;
 
   function updateExpense(id: string, field: keyof Expense, value: string | number) {
-    setData((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === id ? { ...expense, [field]: value } : expense) }));
+    setData((current) => ({
+      ...current,
+      expenses: current.expenses.map((expense) => {
+        if (expense.id !== id) return expense;
+        if (field === "paid") {
+          const paid = Number(value) || 0;
+          return { ...expense, paid, status: paid > 0 ? "확정" : expense.status };
+        }
+        return { ...expense, [field]: value };
+      }),
+    }));
   }
 
   function confirmCommonFund(payer: keyof CommonFund) {
-    const value = Math.max(0, Math.round((Number(commonFundDraft[payer]) || 0) / 100000) * 100000);
+    const value = Math.max(0, Number(commonFundDraft[payer]) || 0);
     setCommonFundDraft((current) => ({ ...current, [payer]: value ? String(value) : "" }));
     setData((current) => ({
       ...current,
       commonFund: { ...current.commonFund, [payer]: value },
     }));
     setConfirmedCommonFund(payer);
-  }
-
-  function stepCommonFundDraft(payer: keyof CommonFund, direction: -1 | 1) {
-    const currentValue = Number(commonFundDraft[payer]) || 0;
-    const value = direction === 1
-      ? Math.ceil((currentValue + 1) / 100000) * 100000
-      : Math.max(0, Math.floor((currentValue - 1) / 100000) * 100000);
-    setCommonFundDraft((current) => ({ ...current, [payer]: value ? String(value) : "" }));
-    setConfirmedCommonFund((current) => current === payer ? null : current);
   }
 
   function addExpense() {
@@ -450,14 +454,14 @@ export default function WeddingPlanner() {
                     <span>PLANNED BUDGET</span>
                     <strong>{money.format(totals.total)}</strong>
                     <div className="progress-track"><div style={{ width: `${paidProgress}%` }} /></div>
-                    <div className="progress-caption"><span>선결제 {paidProgress}%</span><b>{money.format(totals.paid)}</b></div>
+                    <div className="progress-caption"><span>결제 {paidProgress}%</span><b>{money.format(totals.paid)}</b></div>
                   </div>
                 </div>
               </section>
 
               <section className="metric-grid" aria-label="예산 요약">
-                <article className="metric-card accent-coral"><span>남은 잔금</span><strong>{money.format(totals.remaining)}</strong><small>총 예산 - 선결제</small></article>
-                <article className="metric-card accent-sage"><span>선결제 완료</span><strong>{money.format(totals.paid)}</strong><small>{data.expenses.filter((expense) => expense.paid > 0).length}개 항목에 결제 내역 있음</small></article>
+                <article className="metric-card accent-coral"><span>남은 잔금</span><strong>{money.format(totals.remaining)}</strong><small>총 예산 - 결제</small></article>
+                <article className="metric-card accent-sage"><span>결제 완료</span><strong>{money.format(totals.paid)}</strong><small>{data.expenses.filter((expense) => expense.paid > 0).length}개 항목에 결제 내역 있음</small></article>
                 <article className="metric-card accent-gold"><span>할 일 진행률</span><strong>{progress}%</strong><small>{totals.taskDone}개 완료 · {totals.taskTotal - totals.taskDone}개 남음</small></article>
               </section>
 
@@ -495,7 +499,7 @@ export default function WeddingPlanner() {
               <div className="page-title-row"><div><span className="section-kicker">BUDGET & SPENDING</span><h2>예산·지출 내역</h2><p>셀을 클릭해 바로 수정하면 자동 저장됩니다.</p></div><button className="button primary" onClick={addExpense}>+  항목 추가</button></div>
               <div className="compact-metrics">
                 <div><span>총 예산</span><strong>{money.format(totals.total)}</strong></div>
-                <div><span>선결제</span><strong>{money.format(totals.paid)}</strong></div>
+                <div><span>결제</span><strong>{money.format(totals.paid)}</strong></div>
                 <div><span>남은 금액</span><strong>{money.format(totals.remaining)}</strong></div>
               </div>
               <section className="payer-overview" aria-labelledby="payer-overview-title">
@@ -505,7 +509,7 @@ export default function WeddingPlanner() {
                 </div>
                 <div className="payer-table-wrap">
                   <table className="payer-table">
-                    <thead><tr><th>결제자</th><th>배정 항목</th><th>배정 예산</th><th>선결제</th><th>남은 금액</th><th>결제율</th></tr></thead>
+                    <thead><tr><th>결제자</th><th>배정 항목</th><th>배정 예산</th><th>결제</th><th>남은 금액</th><th>결제율</th></tr></thead>
                     <tbody>
                       {payerSummaries.map((summary) => (
                         <tr key={summary.payer} className={`payer-${summary.payer === "미지정" ? "unassigned" : summary.payer}`}>
@@ -530,14 +534,10 @@ export default function WeddingPlanner() {
                       <div className="actual-spending-person-title"><span>{person.label}</span><strong>{money.format(person.total)}</strong></div>
                       <div className="actual-spending-formula">
                         <small>직접 결제 {money.format(person.direct)}</small><i>+</i>
-                        <form className="actual-spending-entry" noValidate onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
+                        <form className="actual-spending-entry" onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
                           <div className="actual-spending-field">
-                            <span>공용금 입금 · 10만원 단위</span>
-                            <div className="common-fund-stepper">
-                              <button type="button" aria-label={`${person.label} 공용금 10만원 빼기`} onClick={() => stepCommonFundDraft(person.key, -1)}>−</button>
-                              <input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" step="100000" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} />
-                              <button type="button" aria-label={`${person.label} 공용금 10만원 더하기`} onClick={() => stepCommonFundDraft(person.key, 1)}>+</button>
-                            </div>
+                            <span>공용금 입금</span>
+                            <input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" step="1" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="금액 입력" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} />
                           </div>
                           <button className={`actual-spending-confirm ${confirmedCommonFund === person.key ? "confirmed" : ""}`} type="submit">{confirmedCommonFund === person.key ? "완료" : "확인"}</button>
                         </form>
@@ -563,11 +563,11 @@ export default function WeddingPlanner() {
                     <section className="expense-group" key={category} aria-labelledby={`expense-group-${groupIndex}`}>
                       <div className="expense-group-heading">
                         <div><span>{String(groupIndex + 1).padStart(2, "0")}</span><h3 id={`expense-group-${groupIndex}`}>{category}</h3><small>{expenses.length}개 항목</small></div>
-                        <dl><div><dt>예산</dt><dd>{money.format(groupTotal)}</dd></div><div><dt>선결제</dt><dd>{money.format(groupPaid)}</dd></div><div><dt>잔금</dt><dd>{money.format(groupTotal - groupPaid)}</dd></div></dl>
+                        <dl><div><dt>예산</dt><dd>{money.format(groupTotal)}</dd></div><div><dt>결제</dt><dd>{money.format(groupPaid)}</dd></div><div><dt>잔금</dt><dd>{money.format(groupTotal - groupPaid)}</dd></div></dl>
                       </div>
                       <div className="table-wrap">
                         <table className="editable-table budget-table grouped-budget-table">
-                          <thead><tr><th>항목</th><th>진행여부</th><th>총예산</th><th>결제자</th><th>선결제</th><th>잔금</th><th>비고</th><th>분류 변경</th><th><span className="sr-only">삭제</span></th></tr></thead>
+                          <thead><tr><th>항목</th><th>진행여부</th><th>총예산</th><th>결제자</th><th>결제</th><th>잔금</th><th>비고</th><th>분류 변경</th><th><span className="sr-only">삭제</span></th></tr></thead>
                           <tbody>
                             {expenses.map((expense) => (
                               <tr key={expense.id}>
@@ -575,7 +575,7 @@ export default function WeddingPlanner() {
                                 <td><input aria-label={`${expense.item} 진행여부`} value={expense.status} placeholder="미정" onChange={(event) => updateExpense(expense.id, "status", event.target.value)} /></td>
                                 <td><input className="number-input" aria-label={`${expense.item} 총예산`} type="number" min="0" value={expense.total || ""} onChange={(event) => updateExpense(expense.id, "total", Number(event.target.value))} /></td>
                                 <td><select className={`payer-select payer-select-${expense.paidBy || "unassigned"}`} aria-label={`${expense.item} 결제자`} value={expense.paidBy} onChange={(event) => updateExpense(expense.id, "paidBy", event.target.value)}><option value="">미지정</option><option>상원</option><option>공용</option><option>영랑</option></select></td>
-                                <td><input className="number-input" aria-label={`${expense.item} 선결제`} type="number" min="0" value={expense.paid || ""} onChange={(event) => updateExpense(expense.id, "paid", Number(event.target.value))} /></td>
+                                <td><input className="number-input" aria-label={`${expense.item} 결제`} type="number" min="0" value={expense.paid || ""} onChange={(event) => updateExpense(expense.id, "paid", Number(event.target.value))} /></td>
                                 <td className="calculated">{number.format(expense.total - expense.paid)}</td>
                                 <td><input aria-label={`${expense.item} 비고`} value={expense.notes} onChange={(event) => updateExpense(expense.id, "notes", event.target.value)} /></td>
                                 <td><input className="category-change" aria-label={`${expense.item} 구분`} value={expense.category} onChange={(event) => updateExpense(expense.id, "category", event.target.value)} /></td>
