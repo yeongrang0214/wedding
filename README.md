@@ -1,98 +1,63 @@
-# vinext-starter
+# 영냥 × 상뭉의 웨딩 아카이브
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+결혼 예산·지출과 할 일을 함께 관리하는 Next.js 웹사이트입니다. Vercel 배포와 Neon Postgres 영구 저장을 기준으로 구성되어 있습니다.
 
-## Prerequisites
+## 로컬 실행
 
-- Node.js `>=22.13.0`
-
-## Quick Start
+1. Node.js 22 이상을 설치합니다.
+2. `.env.example`을 복사해 `.env.local`을 만듭니다.
+3. Neon에서 발급한 `DATABASE_URL`을 입력합니다.
+4. 아래 명령을 실행합니다.
 
 ```bash
 npm install
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+프로덕션 빌드 확인:
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## GitHub에 올릴 파일
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+프로젝트 루트에서 Git 저장소를 만들어 전체 소스를 올리면 `.gitignore`가 불필요한 파일을 자동으로 제외합니다.
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+포함되는 주요 파일:
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+- `app/`
+- `public/`
+- `db/`
+- `drizzle/`
+- `.env.example`
+- `.gitignore`
+- `package.json`, `package-lock.json`
+- `next.config.ts`, `tsconfig.json`
+- `drizzle.config.ts`
+- `postcss.config.mjs`, `eslint.config.mjs`
+- `tests/`
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+절대 올리지 않는 파일:
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+- `.env`, `.env.local` 등 실제 환경 변수
+- `node_modules/`
+- `.next/`, `dist/`
+- `.vercel/`
 
-## Useful Commands
+## Vercel 배포
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+1. 기존 사이트에서 `백업`을 눌러 현재 데이터를 JSON 파일로 저장합니다.
+2. 이 프로젝트를 GitHub 저장소의 `main` 브랜치에 올립니다.
+3. Vercel에서 **New Project**를 누르고 GitHub 저장소를 가져옵니다.
+4. Framework Preset은 **Next.js**, Root Directory는 저장소 루트로 둡니다.
+5. Vercel Marketplace에서 **Neon Postgres**를 프로젝트에 연결합니다.
+6. 프로젝트의 Environment Variables에 `DATABASE_URL`이 등록됐는지 확인합니다.
+7. 배포하거나, 데이터베이스를 나중에 연결했다면 한 번 Redeploy 합니다.
+8. 새 사이트에서 `불러오기`로 1번의 JSON 백업을 선택한 뒤 `예산·지출 저장` 또는 `할 일 저장`을 누릅니다.
 
-## Learn More
+데이터베이스 테이블은 첫 저장 요청에서 자동으로 준비됩니다. `drizzle/`의 SQL은 스키마 이력을 위한 파일입니다.
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## 개인정보 보호
+
+예산과 결제 정보가 포함되어 있으므로 Vercel의 Deployment Protection을 켜거나 별도의 인증을 적용하는 것을 권장합니다. 실제 `DATABASE_URL`은 GitHub에 커밋하지 말고 Vercel 환경 변수에만 저장하세요.

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Tab = "overview" | "budget" | "tasks";
@@ -228,9 +229,9 @@ export default function WeddingPlanner() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     const attempt = ++saveAttemptRef.current;
     const snapshot = JSON.stringify(data);
-    setSaveState("saving");
     const timeout = window.setTimeout(() => {
       autoSaveTimerRef.current = null;
+      setSaveState("saving");
       void enqueuePlannerSave(snapshot)
         .then(() => {
           if (attempt === saveAttemptRef.current) setSaveState("saved");
@@ -247,10 +248,13 @@ export default function WeddingPlanner() {
   }, [data, ready]);
 
   useEffect(() => {
-    setCommonFundDraft({
-      sangwon: data.commonFund.sangwon ? String(data.commonFund.sangwon) : "",
-      yeongrang: data.commonFund.yeongrang ? String(data.commonFund.yeongrang) : "",
-    });
+    const timeout = window.setTimeout(() => {
+      setCommonFundDraft({
+        sangwon: data.commonFund.sangwon ? String(data.commonFund.sangwon) : "",
+        yeongrang: data.commonFund.yeongrang ? String(data.commonFund.yeongrang) : "",
+      });
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [data.commonFund.sangwon, data.commonFund.yeongrang]);
 
   const totals = useMemo(() => {
@@ -529,7 +533,13 @@ export default function WeddingPlanner() {
             <>
               <section className="hero-panel">
                 <figure className="hero-visual">
-                  <img src="/wedding-editorial-hero.png" alt="햇살이 드는 나무 테이블 위 청첩장 종이와 반지 상자, 창밖의 초록 정원" />
+                  <Image
+                    fill
+                    priority
+                    sizes="(max-width: 800px) 100vw, 45vw"
+                    src="/wedding-editorial-hero.png"
+                    alt="햇살이 드는 나무 테이블 위 청첩장 종이와 반지 상자, 창밖의 초록 정원"
+                  />
                   <figcaption><span>OUR WEDDING ARCHIVE</span><span>2026 — FOREVER</span></figcaption>
                 </figure>
                 <div className="hero-editorial">
