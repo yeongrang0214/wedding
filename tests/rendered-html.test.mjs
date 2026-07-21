@@ -54,6 +54,11 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /addExpense/);
   assert.match(planner, /payerSummaries/);
   assert.match(planner, /결제자별 한눈에 보기/);
+  assert.match(planner, /actualSpending/);
+  assert.match(planner, /공용금 입금액/);
+  assert.match(planner, /실제로 낸 돈/);
+  assert.match(planner, /공용금 잔액/);
+  assert.match(planner, /updateCommonFund/);
   assert.match(planner, /expenseGroups\.map/);
   assert.match(planner, /분류 변경/);
   assert.match(planner, /taskGroups\.map/);
@@ -78,6 +83,7 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /calendar-day\.has-open/);
   assert.match(css, /calendar-day\.all-complete/);
+  assert.match(css, /actual-spending-summary/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(page, /영냥 × 상뭉의 웨딩 아카이브/);
   assert.match(layout, /summary_large_image/);

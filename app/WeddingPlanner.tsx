@@ -24,9 +24,14 @@ type Task = {
   due: string;
   done: boolean;
 };
+type CommonFund = {
+  sangwon: number;
+  yeongrang: number;
+};
 type PlannerData = {
   expenses: Expense[];
   tasks: Task[];
+  commonFund: CommonFund;
 };
 
 const STORAGE_KEY = "wedding-planner-yss-v1";
@@ -64,6 +69,7 @@ const DEFAULT_DATA: PlannerData = {
     { id: "e29", category: "신혼여행", item: "신혼여행", status: "", total: 20000000, paidBy: "", paid: 0, notes: "카드할부" },
     { id: "e30", category: "피부과", item: "밴스의원", status: "", total: 3000000, paidBy: "영랑", paid: 3000000, notes: "5개월 할부" },
   ],
+  commonFund: { sangwon: 0, yeongrang: 0 },
   tasks: [
     { id: "t01", title: "웨딩홀 확정", category: "예식", owner: "공용", month: 5, day: 15, due: "", done: true },
     { id: "t02", title: "식대 확정", category: "예식", owner: "공용", month: 5, day: 15, due: "", done: true },
@@ -114,7 +120,14 @@ function normalizeTask(task: Task) {
 }
 
 function normalizePlannerData(input: PlannerData): PlannerData {
-  return { expenses: input.expenses, tasks: input.tasks.map(normalizeTask) };
+  return {
+    expenses: input.expenses,
+    tasks: input.tasks.map(normalizeTask),
+    commonFund: {
+      sangwon: Number(input.commonFund?.sangwon || 0),
+      yeongrang: Number(input.commonFund?.yeongrang || 0),
+    },
+  };
 }
 
 function taskScheduleLabel(task: Task) {
@@ -197,6 +210,25 @@ export default function WeddingPlanner() {
     });
   }, [data.expenses]);
 
+  const actualSpending = useMemo(() => {
+    const directPaid = (payer: "상원" | "영랑") => data.expenses
+      .filter((expense) => expense.paidBy === payer)
+      .reduce((sum, expense) => sum + Number(expense.paid || 0), 0);
+    const commonSpent = data.expenses
+      .filter((expense) => expense.paidBy === "공용")
+      .reduce((sum, expense) => sum + Number(expense.paid || 0), 0);
+    const totalFunded = data.commonFund.sangwon + data.commonFund.yeongrang;
+    return {
+      people: [
+        { key: "sangwon" as const, label: "상원", direct: directPaid("상원"), common: data.commonFund.sangwon, total: directPaid("상원") + data.commonFund.sangwon },
+        { key: "yeongrang" as const, label: "영랑", direct: directPaid("영랑"), common: data.commonFund.yeongrang, total: directPaid("영랑") + data.commonFund.yeongrang },
+      ],
+      commonSpent,
+      totalFunded,
+      balance: totalFunded - commonSpent,
+    };
+  }, [data.commonFund, data.expenses]);
+
   const expenseGroups = useMemo(() => {
     const grouped = new Map<string, Expense[]>();
     visibleExpenses.forEach((expense) => {
@@ -272,6 +304,13 @@ export default function WeddingPlanner() {
 
   function updateExpense(id: string, field: keyof Expense, value: string | number) {
     setData((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === id ? { ...expense, [field]: value } : expense) }));
+  }
+
+  function updateCommonFund(payer: keyof CommonFund, value: number) {
+    setData((current) => ({
+      ...current,
+      commonFund: { ...current.commonFund, [payer]: Math.max(0, value || 0) },
+    }));
   }
 
   function addExpense() {
@@ -459,6 +498,23 @@ export default function WeddingPlanner() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="actual-spending-summary">
+                  <div className="actual-spending-intro">
+                    <span>실제로 낸 돈</span>
+                    <p>개인 결제와 공용금 입금을 합산해요.</p>
+                  </div>
+                  {actualSpending.people.map((person) => (
+                    <article className={`actual-spending-person person-${person.key}`} key={person.key}>
+                      <div className="actual-spending-person-title"><span>{person.label}</span><strong>{money.format(person.total)}</strong></div>
+                      <div className="actual-spending-formula"><small>직접 결제 {money.format(person.direct)}</small><i>+</i><label><span>공용금 입금</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" value={person.common || ""} placeholder="0" onChange={(event) => updateCommonFund(person.key, Number(event.target.value))} /></label></div>
+                    </article>
+                  ))}
+                  <div className={`common-fund-balance ${actualSpending.balance < 0 ? "shortage" : ""}`}>
+                    <span>공용금 잔액</span>
+                    <strong>{money.format(actualSpending.balance)}</strong>
+                    <small>입금 {money.format(actualSpending.totalFunded)} · 사용 {money.format(actualSpending.commonSpent)}</small>
+                  </div>
                 </div>
               </section>
               <div className="toolbar">
