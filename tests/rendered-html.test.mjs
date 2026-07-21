@@ -36,7 +36,7 @@ test("server-renders the wedding archive", async () => {
   assert.match(html, /₩71,125,900/);
   assert.match(html, /예산·지출/);
   assert.doesNotMatch(html, /후보 비교/);
-  assert.match(html, /7월 · 1주차/);
+  assert.match(html, /7월 5일 · 1주차/);
   assert.match(html, /<meta property="og:image" content="http:\/\/localhost:3000\/og\.png"/);
 });
 
@@ -59,7 +59,10 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /taskGroups\.map/);
   assert.match(planner, /MONTHLY CHECKLIST/);
   assert.match(planner, /normalizePlannerData/);
-  assert.match(planner, /title: "웨딩홀 확정".*month: 5, week: 3/);
+  assert.match(planner, /title: "웨딩홀 확정".*month: 5, day: 15/);
+  assert.match(planner, /getTaskWeek/);
+  assert.match(planner, /updateTaskMonth/);
+  assert.match(planner, /월과 날짜만 입력하면 해당 월의 주차로 자동 분류/);
   assert.match(planner, /addTask/);
   assert.doesNotMatch(planner, /activeTab === "compare"/);
   assert.doesNotMatch(planner, /updateVenue|updateRingChoice/);

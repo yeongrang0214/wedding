@@ -19,7 +19,8 @@ type Task = {
   category: string;
   owner: string;
   month: number | "";
-  week: number | "";
+  day: number | "";
+  week?: number | "";
   due: string;
   done: boolean;
 };
@@ -64,21 +65,21 @@ const DEFAULT_DATA: PlannerData = {
     { id: "e30", category: "피부과", item: "밴스의원", status: "", total: 3000000, paidBy: "영랑", paid: 3000000, notes: "5개월 할부" },
   ],
   tasks: [
-    { id: "t01", title: "웨딩홀 확정", category: "예식", owner: "공용", month: 5, week: 3, due: "", done: true },
-    { id: "t02", title: "식대 확정", category: "예식", owner: "공용", month: 5, week: 3, due: "", done: true },
-    { id: "t03", title: "웨딩밴드 서울 방문", category: "일정", owner: "공용", month: 7, week: 1, due: "7월 5일", done: false },
-    { id: "t04", title: "상원 양복 대여", category: "일정", owner: "상원", month: 8, week: 1, due: "8월 2일", done: false },
-    { id: "t05", title: "노마 웨딩 촬영", category: "일정", owner: "공용", month: 8, week: 1, due: "8월 4일 · 대구", done: false },
-    { id: "t06", title: "양가 인사", category: "일정", owner: "공용", month: 8, week: 3, due: "8월 중", done: false },
-    { id: "t07", title: "상견례", category: "일정", owner: "공용", month: 9, week: 3, due: "9월 중", done: false },
-    { id: "t08", title: "속옷(브라, 속바지)", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t09", title: "슈즈", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t10", title: "네일", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t11", title: "부케", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t12", title: "귀걸이", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t13", title: "렌즈", category: "촬영 준비물", owner: "영랑", month: 7, week: 4, due: "", done: false },
-    { id: "t14", title: "양말", category: "촬영 준비물", owner: "상원", month: 7, week: 4, due: "", done: false },
-    { id: "t15", title: "수트", category: "촬영 준비물", owner: "상원", month: 7, week: 4, due: "", done: false },
+    { id: "t01", title: "웨딩홀 확정", category: "예식", owner: "공용", month: 5, day: 15, due: "", done: true },
+    { id: "t02", title: "식대 확정", category: "예식", owner: "공용", month: 5, day: 15, due: "", done: true },
+    { id: "t03", title: "웨딩밴드 서울 방문", category: "일정", owner: "공용", month: 7, day: 5, due: "서울 방문", done: false },
+    { id: "t04", title: "상원 양복 대여", category: "일정", owner: "상원", month: 8, day: 2, due: "대여", done: false },
+    { id: "t05", title: "노마 웨딩 촬영", category: "일정", owner: "공용", month: 8, day: 4, due: "대구", done: false },
+    { id: "t06", title: "양가 인사", category: "일정", owner: "공용", month: 8, day: 15, due: "", done: false },
+    { id: "t07", title: "상견례", category: "일정", owner: "공용", month: 9, day: 15, due: "", done: false },
+    { id: "t08", title: "속옷(브라, 속바지)", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t09", title: "슈즈", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t10", title: "네일", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t11", title: "부케", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t12", title: "귀걸이", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t13", title: "렌즈", category: "촬영 준비물", owner: "영랑", month: 7, day: 22, due: "", done: false },
+    { id: "t14", title: "양말", category: "촬영 준비물", owner: "상원", month: 7, day: 22, due: "", done: false },
+    { id: "t15", title: "수트", category: "촬영 준비물", owner: "상원", month: 7, day: 22, due: "", done: false },
   ],
 };
 
@@ -87,18 +88,26 @@ const money = new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW
 const number = new Intl.NumberFormat("ko-KR");
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1);
-const weekOptions = Array.from({ length: 5 }, (_, index) => index + 1);
+const daysInMonth = (month: number | "") => month ? [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] : 31;
+const dayOptions = (month: number | "") => Array.from({ length: daysInMonth(month) }, (_, index) => index + 1);
+const getTaskWeek = (day: number | "") => day ? Math.min(5, Math.ceil(day / 7)) : "";
+const representativeDayForWeek = (week: number | "" | undefined) => week ? Math.min(31, (week - 1) * 7 + 1) : "";
 
 function normalizeTask(task: Task) {
   const fallback = DEFAULT_DATA.tasks.find((item) => item.id === task.id);
   const monthMatch = task.due?.match(/(\d{1,2})월/);
   const dayMatch = task.due?.match(/(\d{1,2})일/);
   const inferredMonth = monthMatch ? Number(monthMatch[1]) : "";
-  const inferredWeek = dayMatch ? Math.min(5, Math.ceil(Number(dayMatch[1]) / 7)) : task.due?.includes("초") ? 1 : task.due?.includes("중") ? 3 : task.due?.includes("말") ? 4 : "";
+  const inferredDay = dayMatch ? Number(dayMatch[1]) : task.due?.includes("초") ? 1 : task.due?.includes("중") ? 15 : task.due?.includes("말") ? 22 : "";
   return {
-    ...task,
+    id: task.id,
+    title: task.title,
+    category: task.category,
+    owner: task.owner,
     month: task.month ?? (inferredMonth || fallback?.month || ""),
-    week: task.week ?? (inferredWeek || fallback?.week || ""),
+    day: task.day ?? (inferredDay || fallback?.day || representativeDayForWeek(task.week)),
+    due: task.due,
+    done: task.done,
   };
 }
 
@@ -108,7 +117,8 @@ function normalizePlannerData(input: PlannerData): PlannerData {
 
 function taskScheduleLabel(task: Task) {
   if (!task.month) return "일정 미정";
-  return `${task.month}월${task.week ? ` · ${task.week}주차` : " · 주차 미정"}`;
+  if (!task.day) return `${task.month}월 · 날짜 미정`;
+  return `${task.month}월 ${task.day}일 · ${getTaskWeek(task.day)}주차`;
 }
 
 const tabItems: { id: Tab; label: string; hint: string }[] = [
@@ -201,7 +211,7 @@ export default function WeddingPlanner() {
     const grouped = new Map<number | "", Map<number | "", Task[]>>();
     visibleTasks.forEach((task) => {
       const month = task.month || "";
-      const week = task.week || "";
+      const week = getTaskWeek(task.day);
       const weeks = grouped.get(month) || new Map<number | "", Task[]>();
       weeks.set(week, [...(weeks.get(week) || []), task]);
       grouped.set(month, weeks);
@@ -234,9 +244,16 @@ export default function WeddingPlanner() {
   function addTask() {
     const today = new Date();
     const month = today.getMonth() + 1;
-    const week = Math.min(5, Math.ceil(today.getDate() / 7));
-    setData((current) => ({ ...current, tasks: [{ id: uid("t"), title: "새 할 일", category: "준비", owner: "공용", month, week, due: "", done: false }, ...current.tasks] }));
+    const day = today.getDate();
+    setData((current) => ({ ...current, tasks: [{ id: uid("t"), title: "새 할 일", category: "준비", owner: "공용", month, day, due: "", done: false }, ...current.tasks] }));
     setActiveTab("tasks");
+  }
+
+  function updateTaskMonth(id: string, month: number | "") {
+    setData((current) => ({
+      ...current,
+      tasks: current.tasks.map((task) => task.id === id ? { ...task, month, day: task.day && task.day > daysInMonth(month) ? daysInMonth(month) : task.day } : task),
+    }));
   }
 
   function updateTask(id: string, field: keyof Task, value: string | number | boolean) {
@@ -441,7 +458,7 @@ export default function WeddingPlanner() {
 
           {activeTab === "tasks" && (
             <section className="page-section">
-              <div className="page-title-row"><div><span className="section-kicker">MONTHLY CHECKLIST</span><h2>월별·주차별 할 일</h2><p>결혼 준비 일정을 월과 주차로 나누어 한눈에 확인하세요.</p></div><button className="button primary" onClick={addTask}>+  할 일 추가</button></div>
+              <div className="page-title-row"><div><span className="section-kicker">MONTHLY CHECKLIST</span><h2>월별·주차별 할 일</h2><p>월과 날짜만 입력하면 해당 월의 주차로 자동 분류됩니다.</p></div><button className="button primary" onClick={addTask}>+  할 일 추가</button></div>
               <div className="task-progress-panel">
                 <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
                 <div><span>준비 진행률</span><strong>{totals.taskDone}개 완료, {totals.taskTotal - totals.taskDone}개 남았어요</strong><div className="progress-track wide"><div style={{ width: `${progress}%` }} /></div></div>
@@ -464,7 +481,7 @@ export default function WeddingPlanner() {
                       <div className="task-week-list">
                         {monthGroup.weeks.map((weekGroup) => (
                           <section className="task-week-group" key={`${monthGroup.month || "unscheduled"}-${weekGroup.week || "unscheduled"}`}>
-                            <div className="task-week-heading"><span>{weekGroup.week ? `${weekGroup.week}주차` : "주차 미정"}</span><small>{weekGroup.tasks.length}개</small></div>
+                            <div className="task-week-heading"><span>{weekGroup.week ? `${weekGroup.week}주차` : "날짜 미정"}</span><small>자동 분류 · {weekGroup.tasks.length}개</small></div>
                             <div className="task-list">
                               {weekGroup.tasks.map((task) => (
                                 <article className={`task-card ${task.done ? "done" : ""}`} key={task.id}>
@@ -472,11 +489,11 @@ export default function WeddingPlanner() {
                                   <div className="task-fields">
                                     <input className="task-title-input" aria-label="할 일" value={task.title} onChange={(event) => updateTask(task.id, "title", event.target.value)} />
                                     <div className="task-meta-fields">
-                                      <label><span>월</span><select aria-label={`${task.title} 월`} value={task.month} onChange={(event) => updateTask(task.id, "month", event.target.value ? Number(event.target.value) : "")}><option value="">미정</option>{monthOptions.map((month) => <option key={month} value={month}>{month}월</option>)}</select></label>
-                                      <label><span>주차</span><select aria-label={`${task.title} 주차`} value={task.week} onChange={(event) => updateTask(task.id, "week", event.target.value ? Number(event.target.value) : "")}><option value="">미정</option>{weekOptions.map((week) => <option key={week} value={week}>{week}주차</option>)}</select></label>
+                                      <label><span>월</span><select aria-label={`${task.title} 월`} value={task.month} onChange={(event) => updateTaskMonth(task.id, event.target.value ? Number(event.target.value) : "")}><option value="">미정</option>{monthOptions.map((month) => <option key={month} value={month}>{month}월</option>)}</select></label>
+                                      <label><span>일</span><select aria-label={`${task.title} 일`} value={task.day} onChange={(event) => updateTask(task.id, "day", event.target.value ? Number(event.target.value) : "")}><option value="">미정</option>{dayOptions(task.month).map((day) => <option key={day} value={day}>{day}일</option>)}</select></label>
                                       <label><span>분류</span><input aria-label={`${task.title} 분류`} value={task.category} onChange={(event) => updateTask(task.id, "category", event.target.value)} /></label>
                                       <label><span>담당</span><select aria-label={`${task.title} 담당`} value={task.owner} onChange={(event) => updateTask(task.id, "owner", event.target.value)}><option>공용</option><option>영랑</option><option>상원</option></select></label>
-                                      <label><span>상세 일정</span><input aria-label={`${task.title} 상세 일정`} value={task.due} placeholder="날짜·장소 메모" onChange={(event) => updateTask(task.id, "due", event.target.value)} /></label>
+                                      <label><span>메모</span><input aria-label={`${task.title} 메모`} value={task.due} placeholder="장소·준비사항" onChange={(event) => updateTask(task.id, "due", event.target.value)} /></label>
                                     </div>
                                   </div>
                                   <button className="icon-button" aria-label={`${task.title} 삭제`} onClick={() => removeTask(task.id)}>×</button>
