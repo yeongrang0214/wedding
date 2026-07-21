@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = incomingHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
   const title = "영냥 × 상뭉의 웨딩 아카이브";
-  const description = "두 사람의 결혼 예산, 일정, 할 일과 후보를 차분히 기록하는 웨딩 아카이브";
+  const description = "두 사람의 결혼 예산, 지출과 할 일을 차분히 기록하는 웨딩 아카이브";
 
   return {
     metadataBase: new URL(origin),

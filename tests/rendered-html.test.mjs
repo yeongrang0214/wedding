@@ -35,7 +35,7 @@ test("server-renders the wedding archive", async () => {
   assert.match(html, /wedding-editorial-hero\.png/);
   assert.match(html, /₩71,125,900/);
   assert.match(html, /예산·지출/);
-  assert.match(html, /후보 비교/);
+  assert.doesNotMatch(html, /후보 비교/);
   assert.match(html, /<meta property="og:image" content="http:\/\/localhost:3000\/og\.png"/);
 });
 
@@ -56,8 +56,8 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /expenseGroups\.map/);
   assert.match(planner, /분류 변경/);
   assert.match(planner, /addTask/);
-  assert.match(planner, /updateVenue/);
-  assert.match(planner, /updateRingChoice/);
+  assert.doesNotMatch(planner, /activeTab === "compare"/);
+  assert.doesNotMatch(planner, /updateVenue|updateRingChoice/);
   assert.match(planner, /\/wedding-editorial-hero\.png/);
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /prefers-reduced-motion/);

@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
-type Tab = "overview" | "budget" | "tasks" | "compare";
+type Tab = "overview" | "budget" | "tasks";
 type Expense = {
   id: string;
   category: string;
@@ -21,30 +21,9 @@ type Task = {
   due: string;
   done: boolean;
 };
-type Venue = {
-  id: string;
-  name: string;
-  room: string;
-  total: number;
-  venueFee: number;
-  meal: number;
-  guaranteed: number;
-  parentMakeup: number;
-  extras: string;
-};
-type RingChoice = { name: string; price: number };
-type RingShop = {
-  id: string;
-  shop: string;
-  time: string;
-  address: string;
-  choices: RingChoice[];
-};
 type PlannerData = {
   expenses: Expense[];
   tasks: Task[];
-  venues: Venue[];
-  rings: RingShop[];
 };
 
 const STORAGE_KEY = "wedding-planner-yss-v1";
@@ -99,18 +78,6 @@ const DEFAULT_DATA: PlannerData = {
     { id: "t14", title: "양말", category: "촬영 준비물", owner: "상원", due: "", done: false },
     { id: "t15", title: "수트", category: "촬영 준비물", owner: "상원", due: "", done: false },
   ],
-  venues: [
-    { id: "v01", name: "라메르", room: "6층", total: 18690000, venueFee: 4000000, meal: 47000, guaranteed: 200, parentMakeup: 460000, extras: "기본용품·부케·원판 포함, 드레스 200만원, 본식 비디오 40만원" },
-    { id: "v02", name: "더누벨", room: "3층 (10월 오픈)", total: 21950000, venueFee: 6500000, meal: 49000, guaranteed: 200, parentMakeup: 500000, extras: "드레스 200만원, 부케 15만원, 웨딩포토부스 45만원" },
-    { id: "v03", name: "소노캄", room: "", total: 15250000, venueFee: 2000000, meal: 53000, guaranteed: 200, parentMakeup: 0, extras: "주류 포함" },
-  ],
-  rings: [
-    { id: "r01", shop: "소그노 주얼리", time: "10:30", address: "서울 강남구 압구정로 453 6층", choices: [{ name: "평화로운", price: 5130000 }, { name: "월계수2", price: 4300000 }, { name: "", price: 0 }] },
-    { id: "r02", shop: "스튜디오 코랄", time: "12:00", address: "서울 용산구 한남대로42나길 18", choices: [{ name: "", price: 0 }, { name: "", price: 0 }, { name: "", price: 0 }] },
-    { id: "r03", shop: "누니주얼리", time: "13:30", address: "서울 용산구 이태원로54길 34 NOONEE", choices: [{ name: "Love Letter", price: 4030000 }, { name: "", price: 0 }, { name: "", price: 0 }] },
-    { id: "r04", shop: "프릿", time: "15:00", address: "서울 용산구 대사관로 41 3층", choices: [{ name: "Serene Princess Cut Diamond Ring", price: 4900000 }, { name: "In Us Time Ring-Diamond", price: 4900000 }, { name: "Believe Matt Ring", price: 4100000 }] },
-    { id: "r05", shop: "코이누르", time: "17:00", address: "서울 서초구 동광로49길 74 1층", choices: [{ name: "테르소", price: 0 }, { name: "리엔", price: 0 }, { name: "", price: 0 }] },
-  ],
 };
 
 const cloneDefault = () => JSON.parse(JSON.stringify(DEFAULT_DATA)) as PlannerData;
@@ -122,7 +89,6 @@ const tabItems: { id: Tab; label: string; hint: string }[] = [
   { id: "overview", label: "한눈에", hint: "요약" },
   { id: "budget", label: "예산·지출", hint: "30개 항목" },
   { id: "tasks", label: "할 일", hint: "체크리스트" },
-  { id: "compare", label: "후보 비교", hint: "식장·반지" },
 ];
 
 export default function WeddingPlanner() {
@@ -138,7 +104,10 @@ export default function WeddingPlanner() {
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) setData(JSON.parse(stored) as PlannerData);
+      if (stored) {
+        const parsed = JSON.parse(stored) as PlannerData;
+        setData({ expenses: parsed.expenses, tasks: parsed.tasks });
+      }
     } catch {
       setNotice("저장된 데이터를 읽지 못해 원본 엑셀 데이터로 시작했습니다.");
     } finally {
@@ -200,7 +169,6 @@ export default function WeddingPlanner() {
   const visibleTasks = data.tasks.filter((task) => taskFilter === "all" || (taskFilter === "done" ? task.done : !task.done));
   const progress = totals.taskTotal ? Math.round((totals.taskDone / totals.taskTotal) * 100) : 0;
   const paidProgress = totals.total ? Math.min(100, Math.round((totals.paid / totals.total) * 100)) : 0;
-  const cheapestVenue = data.venues.reduce<Venue | null>((best, venue) => !best || venue.total < best.total ? venue : best, null);
 
   function updateExpense(id: string, field: keyof Expense, value: string | number) {
     setData((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === id ? { ...expense, [field]: value } : expense) }));
@@ -228,34 +196,6 @@ export default function WeddingPlanner() {
     setData((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
   }
 
-  function updateVenue(id: string, field: keyof Venue, value: string | number) {
-    setData((current) => ({ ...current, venues: current.venues.map((venue) => venue.id === id ? { ...venue, [field]: value } : venue) }));
-  }
-
-  function addVenue() {
-    setData((current) => ({ ...current, venues: [...current.venues, { id: uid("v"), name: "새 식장", room: "", total: 0, venueFee: 0, meal: 0, guaranteed: 0, parentMakeup: 0, extras: "" }] }));
-  }
-
-  function removeVenue(id: string) {
-    setData((current) => ({ ...current, venues: current.venues.filter((venue) => venue.id !== id) }));
-  }
-
-  function updateRing(id: string, field: "shop" | "time" | "address", value: string) {
-    setData((current) => ({ ...current, rings: current.rings.map((ring) => ring.id === id ? { ...ring, [field]: value } : ring) }));
-  }
-
-  function updateRingChoice(id: string, index: number, field: keyof RingChoice, value: string | number) {
-    setData((current) => ({ ...current, rings: current.rings.map((ring) => ring.id === id ? { ...ring, choices: ring.choices.map((choice, choiceIndex) => choiceIndex === index ? { ...choice, [field]: value } : choice) } : ring) }));
-  }
-
-  function addRing() {
-    setData((current) => ({ ...current, rings: [...current.rings, { id: uid("r"), shop: "새 매장", time: "", address: "", choices: [{ name: "", price: 0 }, { name: "", price: 0 }, { name: "", price: 0 }] }] }));
-  }
-
-  function removeRing(id: string) {
-    setData((current) => ({ ...current, rings: current.rings.filter((ring) => ring.id !== id) }));
-  }
-
   function downloadBackup() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -272,8 +212,8 @@ export default function WeddingPlanner() {
     if (!file) return;
     try {
       const next = JSON.parse(await file.text()) as PlannerData;
-      if (!Array.isArray(next.expenses) || !Array.isArray(next.tasks) || !Array.isArray(next.venues) || !Array.isArray(next.rings)) throw new Error("invalid");
-      setData(next);
+      if (!Array.isArray(next.expenses) || !Array.isArray(next.tasks)) throw new Error("invalid");
+      setData({ expenses: next.expenses, tasks: next.tasks });
       setNotice("백업 파일을 불러왔습니다.");
     } catch {
       setNotice("이 파일은 결혼 준비 백업 형식이 아닙니다.");
@@ -325,7 +265,7 @@ export default function WeddingPlanner() {
                   <div className="hero-copy">
                     <span className="source-badge">영냥 × 상뭉의 결혼 기록</span>
                     <h2>우리 둘의 계절을<br /><em>차분히 준비하는 기록.</em></h2>
-                    <p>예산과 일정, 마음에 남은 후보들을 한곳에 모았습니다. 엑셀에서 시작한 계획을 우리다운 속도로 계속 이어가요.</p>
+                    <p>예산과 일정, 앞으로 챙길 일들을 한곳에 모았습니다. 엑셀에서 시작한 계획을 우리다운 속도로 계속 이어가요.</p>
                     <div className="hero-actions">
                       <button className="button primary" onClick={addExpense}>지출 항목 추가</button>
                       <button className="button ghost" onClick={addTask}>할 일 추가</button>
@@ -372,11 +312,6 @@ export default function WeddingPlanner() {
                 </article>
               </section>
 
-              <section className="insight-strip">
-                <span className="insight-number">NOTE 01</span>
-                <div><small>OUR SHORTLIST</small><strong>{cheapestVenue?.name || "식장 후보"}가 현재 입력값 기준 가장 작은 예산이에요.</strong></div>
-                <span className="insight-value">{cheapestVenue ? money.format(cheapestVenue.total) : "-"}</span>
-              </section>
             </>
           )}
 
@@ -481,51 +416,6 @@ export default function WeddingPlanner() {
                   </article>
                 ))}
               </div>
-            </section>
-          )}
-
-          {activeTab === "compare" && (
-            <section className="page-section compare-page">
-              <div className="page-title-row"><div><span className="section-kicker">SHORTLIST</span><h2>후보 비교</h2><p>결혼식장 3곳과 7월 5일 웨딩밴드 방문 일정을 옮겼어요.</p></div></div>
-              <section className="compare-section">
-                <div className="section-heading"><div><span className="section-kicker">VENUES</span><h3>결혼식장</h3></div><button className="button secondary" onClick={addVenue}>+  식장 추가</button></div>
-                <div className="venue-grid">
-                  {data.venues.map((venue, index) => (
-                    <article className={`venue-card ${cheapestVenue?.id === venue.id ? "recommended" : ""}`} key={venue.id}>
-                      <div className="venue-card-top"><span>{String(index + 1).padStart(2, "0")}</span>{cheapestVenue?.id === venue.id && <b>현재 최저 예산</b>}<button className="icon-button" aria-label={`${venue.name} 삭제`} onClick={() => removeVenue(venue.id)}>×</button></div>
-                      <input className="venue-name" aria-label="식장명" value={venue.name} onChange={(event) => updateVenue(venue.id, "name", event.target.value)} />
-                      <input className="venue-room" aria-label={`${venue.name} 홀`} value={venue.room} placeholder="홀 미정" onChange={(event) => updateVenue(venue.id, "room", event.target.value)} />
-                      <label className="venue-total"><span>총 예산</span><input type="number" value={venue.total || ""} onChange={(event) => updateVenue(venue.id, "total", Number(event.target.value))} /><strong>{money.format(venue.total)}</strong></label>
-                      <div className="venue-facts">
-                        <label><span>대관료</span><input type="number" value={venue.venueFee || ""} onChange={(event) => updateVenue(venue.id, "venueFee", Number(event.target.value))} /></label>
-                        <label><span>1인 식대</span><input type="number" value={venue.meal || ""} onChange={(event) => updateVenue(venue.id, "meal", Number(event.target.value))} /></label>
-                        <label><span>보증 인원</span><input type="number" value={venue.guaranteed || ""} onChange={(event) => updateVenue(venue.id, "guaranteed", Number(event.target.value))} /></label>
-                        <label><span>혼주 메이크업</span><input type="number" value={venue.parentMakeup || ""} onChange={(event) => updateVenue(venue.id, "parentMakeup", Number(event.target.value))} /></label>
-                      </div>
-                      <textarea aria-label={`${venue.name} 추가 조건`} value={venue.extras} onChange={(event) => updateVenue(venue.id, "extras", event.target.value)} />
-                    </article>
-                  ))}
-                </div>
-              </section>
-
-              <section className="compare-section ring-section">
-                <div className="section-heading"><div><span className="section-kicker">RING TOUR · 7.5</span><h3>웨딩밴드 방문 동선</h3></div><button className="button secondary" onClick={addRing}>+  매장 추가</button></div>
-                <div className="timeline">
-                  {data.rings.map((ring, ringIndex) => (
-                    <article className="ring-card" key={ring.id}>
-                      <div className="timeline-marker"><span>{ring.time || "--:--"}</span><i /></div>
-                      <div className="ring-card-body">
-                        <div className="ring-heading"><div><input className="ring-shop" aria-label="매장명" value={ring.shop} onChange={(event) => updateRing(ring.id, "shop", event.target.value)} /><input className="ring-address" aria-label={`${ring.shop} 주소`} value={ring.address} onChange={(event) => updateRing(ring.id, "address", event.target.value)} /></div><div><input className="ring-time" type="time" aria-label={`${ring.shop} 방문 시간`} value={ring.time} onChange={(event) => updateRing(ring.id, "time", event.target.value)} /><button className="icon-button" aria-label={`${ring.shop} 삭제`} onClick={() => removeRing(ring.id)}>×</button></div></div>
-                        <div className="choice-grid">
-                          {ring.choices.map((choice, choiceIndex) => (
-                            <div className="choice" key={`${ring.id}-${choiceIndex}`}><span>희망 {choiceIndex + 1}</span><input aria-label={`${ring.shop} 희망 ${choiceIndex + 1}`} value={choice.name} placeholder="디자인 미정" onChange={(event) => updateRingChoice(ring.id, choiceIndex, "name", event.target.value)} /><label><input type="number" aria-label={`${ring.shop} 희망 ${choiceIndex + 1} 가격`} value={choice.price || ""} placeholder="0" onChange={(event) => updateRingChoice(ring.id, choiceIndex, "price", Number(event.target.value))} /><b>{choice.price ? money.format(choice.price) : "가격 미정"}</b></label></div>
-                          ))}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
             </section>
           )}
 
