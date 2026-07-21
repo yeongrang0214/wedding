@@ -913,18 +913,26 @@ img {
   font-style: normal;
 }
 
-.actual-spending-formula label {
-  flex: 0 1 120px;
+.actual-spending-entry {
+  flex: 0 1 175px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 7px;
 }
 
-.actual-spending-formula label span {
+.actual-spending-entry label {
+  min-width: 0;
+}
+
+.actual-spending-entry label span {
   display: block;
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 8px;
 }
 
-.actual-spending-formula input {
+.actual-spending-entry input {
   width: 100%;
   padding: 5px 4px;
   border: 0;
@@ -933,6 +941,21 @@ img {
   font-family: var(--serif);
   font-size: 14px;
   text-align: right;
+}
+
+.actual-spending-entry button {
+  min-width: 38px;
+  padding: 6px 7px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: white;
+  font-size: 8px;
+}
+
+.actual-spending-entry button:hover,
+.actual-spending-entry button.confirmed {
+  background: var(--sage-dark);
+  border-color: var(--sage-dark);
 }
 
 .common-fund-balance {
@@ -2650,8 +2673,8 @@ img {
     max-width: none;
   }
 
-  .actual-spending-formula label {
-    flex-basis: 140px;
+  .actual-spending-entry {
+    flex-basis: 175px;
   }
 
   .expense-group-heading {

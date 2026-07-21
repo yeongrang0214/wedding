@@ -152,6 +152,8 @@ export default function WeddingPlanner() {
   const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "done">("all");
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth() + 1);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<{ month: number; day: number } | null>(null);
+  const [commonFundDraft, setCommonFundDraft] = useState<Record<keyof CommonFund, string>>({ sangwon: "", yeongrang: "" });
+  const [confirmedCommonFund, setConfirmedCommonFund] = useState<keyof CommonFund | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -172,6 +174,13 @@ export default function WeddingPlanner() {
     if (!ready) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data, ready]);
+
+  useEffect(() => {
+    setCommonFundDraft({
+      sangwon: data.commonFund.sangwon ? String(data.commonFund.sangwon) : "",
+      yeongrang: data.commonFund.yeongrang ? String(data.commonFund.yeongrang) : "",
+    });
+  }, [data.commonFund.sangwon, data.commonFund.yeongrang]);
 
   const totals = useMemo(() => {
     const total = data.expenses.reduce((sum, item) => sum + Number(item.total || 0), 0);
@@ -306,11 +315,13 @@ export default function WeddingPlanner() {
     setData((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === id ? { ...expense, [field]: value } : expense) }));
   }
 
-  function updateCommonFund(payer: keyof CommonFund, value: number) {
+  function confirmCommonFund(payer: keyof CommonFund) {
+    const value = Math.max(0, Number(commonFundDraft[payer]) || 0);
     setData((current) => ({
       ...current,
-      commonFund: { ...current.commonFund, [payer]: Math.max(0, value || 0) },
+      commonFund: { ...current.commonFund, [payer]: value },
     }));
+    setConfirmedCommonFund(payer);
   }
 
   function addExpense() {
@@ -507,7 +518,13 @@ export default function WeddingPlanner() {
                   {actualSpending.people.map((person) => (
                     <article className={`actual-spending-person person-${person.key}`} key={person.key}>
                       <div className="actual-spending-person-title"><span>{person.label}</span><strong>{money.format(person.total)}</strong></div>
-                      <div className="actual-spending-formula"><small>직접 결제 {money.format(person.direct)}</small><i>+</i><label><span>공용금 입금</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" value={person.common || ""} placeholder="0" onChange={(event) => updateCommonFund(person.key, Number(event.target.value))} /></label></div>
+                      <div className="actual-spending-formula">
+                        <small>직접 결제 {money.format(person.direct)}</small><i>+</i>
+                        <form className="actual-spending-entry" onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
+                          <label><span>공용금 입금</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} /></label>
+                          <button className={confirmedCommonFund === person.key ? "confirmed" : ""} type="submit">{confirmedCommonFund === person.key ? "완료" : "확인"}</button>
+                        </form>
+                      </div>
                     </article>
                   ))}
                   <div className={`common-fund-balance ${actualSpending.balance < 0 ? "shortage" : ""}`}>
