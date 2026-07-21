@@ -169,6 +169,21 @@ export default function WeddingPlanner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const saveAttemptRef = useRef(0);
+  const autoSaveTimerRef = useRef<number | null>(null);
+
+  function enqueuePlannerSave(snapshot: string) {
+    const request = saveQueueRef.current.then(async () => {
+      const response = await fetch("/api/planner", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: snapshot,
+      });
+      if (!response.ok) throw new Error("save failed");
+      window.localStorage.setItem(SERVER_MIGRATION_KEY, "1");
+    });
+    saveQueueRef.current = request.catch(() => undefined);
+    return request;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -215,22 +230,20 @@ export default function WeddingPlanner() {
     const snapshot = JSON.stringify(data);
     setSaveState("saving");
     const timeout = window.setTimeout(() => {
-      saveQueueRef.current = saveQueueRef.current
-        .then(async () => {
-          const response = await fetch("/api/planner", {
-            method: "PUT",
-            headers: { "content-type": "application/json" },
-            body: snapshot,
-          });
-          if (!response.ok) throw new Error("save failed");
-          window.localStorage.setItem(SERVER_MIGRATION_KEY, "1");
+      autoSaveTimerRef.current = null;
+      void enqueuePlannerSave(snapshot)
+        .then(() => {
           if (attempt === saveAttemptRef.current) setSaveState("saved");
         })
         .catch(() => {
           if (attempt === saveAttemptRef.current) setSaveState("offline");
         });
     }, 650);
-    return () => window.clearTimeout(timeout);
+    autoSaveTimerRef.current = timeout;
+    return () => {
+      window.clearTimeout(timeout);
+      if (autoSaveTimerRef.current === timeout) autoSaveTimerRef.current = null;
+    };
   }, [data, ready]);
 
   useEffect(() => {
@@ -441,6 +454,29 @@ export default function WeddingPlanner() {
     setNotice("백업 파일을 저장했습니다.");
   }
 
+  async function saveCurrentPage() {
+    if (!ready) return;
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    const attempt = ++saveAttemptRef.current;
+    const snapshot = JSON.stringify(data);
+    window.localStorage.setItem(STORAGE_KEY, snapshot);
+    setSaveState("saving");
+    try {
+      await enqueuePlannerSave(snapshot);
+      if (attempt !== saveAttemptRef.current) return;
+      setSaveState("saved");
+      const pageLabel = tabItems.find((tab) => tab.id === activeTab)?.label || "현재";
+      setNotice(`${pageLabel} 페이지를 저장했습니다.`);
+    } catch {
+      if (attempt !== saveAttemptRef.current) return;
+      setSaveState("offline");
+      setNotice("저장하지 못했습니다. 연결을 확인한 뒤 다시 눌러주세요.");
+    }
+  }
+
   async function importBackup(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -477,6 +513,7 @@ export default function WeddingPlanner() {
           ))}
         </nav>
         <div className="header-actions">
+          <button className="page-save-button" disabled={!ready} onClick={saveCurrentPage}>{tabItems.find((tab) => tab.id === activeTab)?.label} 저장</button>
           <span className={`save-state save-state-${saveState}`}><i /> {saveStateLabels[saveState]}</span>
           <button className="header-link" onClick={downloadBackup}>백업</button>
           <button className="header-link" onClick={() => fileInputRef.current?.click()}>불러오기</button>

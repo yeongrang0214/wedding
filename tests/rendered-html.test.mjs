@@ -56,6 +56,11 @@ test("keeps editing, durable storage, backup, and responsive design capabilities
   assert.match(planner, /fetch\("\/api\/planner"/);
   assert.match(planner, /SERVER_MIGRATION_KEY/);
   assert.match(planner, /saveQueueRef/);
+  assert.match(planner, /autoSaveTimerRef/);
+  assert.match(planner, /enqueuePlannerSave/);
+  assert.match(planner, /saveCurrentPage/);
+  assert.match(planner, /페이지를 저장했습니다/);
+  assert.match(planner, /page-save-button/);
   assert.match(planner, /사이트에 자동 저장됩니다/);
   assert.match(planner, /downloadBackup/);
   assert.match(planner, /importBackup/);
@@ -100,6 +105,7 @@ test("keeps editing, durable storage, backup, and responsive design capabilities
   assert.match(css, /calendar-day\.all-complete/);
   assert.match(css, /actual-spending-summary/);
   assert.match(css, /save-state-offline/);
+  assert.match(css, /page-save-button/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(apiRoute, /readPlannerState/);
   assert.match(apiRoute, /writePlannerState/);

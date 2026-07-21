@@ -202,6 +202,27 @@ img {
   background: var(--clay);
 }
 
+.page-save-button {
+  min-width: 84px;
+  padding: 8px 12px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: white;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.page-save-button:hover {
+  background: var(--sage-dark);
+  border-color: var(--sage-dark);
+}
+
+.page-save-button:disabled {
+  cursor: wait;
+  opacity: 0.42;
+}
+
 @keyframes save-pulse {
   from { opacity: 0.25; transform: scale(0.75); }
   to { opacity: 1; transform: scale(1.2); }
@@ -2523,7 +2544,12 @@ img {
   }
 
   .header-actions {
-    gap: 11px;
+    gap: 8px;
+  }
+
+  .page-save-button {
+    min-width: 68px;
+    padding: 7px 8px;
   }
 
   .tab-list {
