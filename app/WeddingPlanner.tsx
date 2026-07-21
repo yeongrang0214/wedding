@@ -225,6 +225,22 @@ export default function WeddingPlanner() {
           .map(([week, tasks]) => ({ week, tasks })),
       }));
   }, [visibleTasks]);
+
+  const remainingOverview = useMemo(() => {
+    const tasks = data.tasks
+      .filter((task) => !task.done)
+      .sort((a, b) => ((a.month || 99) * 100 + (a.day || 99)) - ((b.month || 99) * 100 + (b.day || 99)));
+    const owners = ["공용", "영랑", "상원"].map((owner) => ({ owner, count: tasks.filter((task) => task.owner === owner).length }));
+    const grouped = new Map<string, { month: number | ""; week: number | ""; tasks: Task[] }>();
+    tasks.forEach((task) => {
+      const month = task.month || "";
+      const week = getTaskWeek(task.day);
+      const key = `${month || "none"}-${week || "none"}`;
+      const current = grouped.get(key) || { month, week, tasks: [] };
+      grouped.set(key, { ...current, tasks: [...current.tasks, task] });
+    });
+    return { tasks, next: tasks[0] || null, owners, groups: [...grouped.values()] };
+  }, [data.tasks]);
   const progress = totals.taskTotal ? Math.round((totals.taskDone / totals.taskTotal) * 100) : 0;
   const paidProgress = totals.total ? Math.min(100, Math.round((totals.paid / totals.total) * 100)) : 0;
 
@@ -463,6 +479,30 @@ export default function WeddingPlanner() {
                 <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
                 <div><span>준비 진행률</span><strong>{totals.taskDone}개 완료, {totals.taskTotal - totals.taskDone}개 남았어요</strong><div className="progress-track wide"><div style={{ width: `${progress}%` }} /></div></div>
               </div>
+              <section className="remaining-overview" aria-labelledby="remaining-overview-title">
+                <div className="remaining-overview-heading">
+                  <div><span className="section-kicker">AT A GLANCE</span><h3 id="remaining-overview-title">남은 준비 한눈에</h3></div>
+                  <p>완료하지 않은 항목만 월·주차와 담당자 기준으로 요약합니다.</p>
+                </div>
+                {remainingOverview.tasks.length ? (
+                  <>
+                    <div className="remaining-summary-grid">
+                      <article className="remaining-count"><span>남은 할 일</span><strong>{remainingOverview.tasks.length}</strong><small>전체 {data.tasks.length}개 중</small></article>
+                      <article className="remaining-next"><span>가장 가까운 일정</span><strong>{remainingOverview.next?.title}</strong><small>{remainingOverview.next ? taskScheduleLabel(remainingOverview.next) : "-"}</small></article>
+                      <article className="remaining-owners"><span>담당자별</span><div>{remainingOverview.owners.map((item) => <p key={item.owner}><b>{item.owner}</b><strong>{item.count}</strong></p>)}</div></article>
+                    </div>
+                    <div className="remaining-week-grid">
+                      {remainingOverview.groups.map((group) => (
+                        <article key={`${group.month || "none"}-${group.week || "none"}`}>
+                          <span>{group.month ? `${group.month}월` : "일정 미정"} · {group.week ? `${group.week}주차` : "날짜 미정"}</span>
+                          <strong>{group.tasks.slice(0, 2).map((task) => task.title).join(" · ")}</strong>
+                          <small>{group.tasks.length > 2 ? `외 ${group.tasks.length - 2}개` : `${group.tasks.length}개 남음`}</small>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                ) : <div className="remaining-complete"><strong>모든 준비를 완료했어요.</strong><span>새로운 할 일이 생기면 위의 버튼으로 추가할 수 있습니다.</span></div>}
+              </section>
               <div className="task-filter" aria-label="할 일 필터">
                 <button className={taskFilter === "all" ? "active" : ""} onClick={() => setTaskFilter("all")}>전체 {data.tasks.length}</button>
                 <button className={taskFilter === "todo" ? "active" : ""} onClick={() => setTaskFilter("todo")}>할 일 {data.tasks.filter((task) => !task.done).length}</button>

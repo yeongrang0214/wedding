@@ -63,6 +63,9 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /getTaskWeek/);
   assert.match(planner, /updateTaskMonth/);
   assert.match(planner, /월과 날짜만 입력하면 해당 월의 주차로 자동 분류/);
+  assert.match(planner, /remainingOverview/);
+  assert.match(planner, /남은 준비 한눈에/);
+  assert.match(planner, /가장 가까운 일정/);
   assert.match(planner, /addTask/);
   assert.doesNotMatch(planner, /activeTab === "compare"/);
   assert.doesNotMatch(planner, /updateVenue|updateRingChoice/);
