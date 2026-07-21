@@ -62,6 +62,9 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /actual-spending-entry/);
   assert.match(planner, /type="submit">\{confirmedCommonFund/);
   assert.match(planner, /step="100000"/);
+  assert.match(planner, /stepCommonFundDraft/);
+  assert.match(planner, /공용금 10만원 더하기/);
+  assert.match(planner, /noValidate/);
   assert.match(planner, /expenseGroups\.map/);
   assert.match(planner, /분류 변경/);
   assert.match(planner, /taskGroups\.map/);

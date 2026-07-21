@@ -316,12 +316,22 @@ export default function WeddingPlanner() {
   }
 
   function confirmCommonFund(payer: keyof CommonFund) {
-    const value = Math.max(0, Number(commonFundDraft[payer]) || 0);
+    const value = Math.max(0, Math.round((Number(commonFundDraft[payer]) || 0) / 100000) * 100000);
+    setCommonFundDraft((current) => ({ ...current, [payer]: value ? String(value) : "" }));
     setData((current) => ({
       ...current,
       commonFund: { ...current.commonFund, [payer]: value },
     }));
     setConfirmedCommonFund(payer);
+  }
+
+  function stepCommonFundDraft(payer: keyof CommonFund, direction: -1 | 1) {
+    const currentValue = Number(commonFundDraft[payer]) || 0;
+    const value = direction === 1
+      ? Math.ceil((currentValue + 1) / 100000) * 100000
+      : Math.max(0, Math.floor((currentValue - 1) / 100000) * 100000);
+    setCommonFundDraft((current) => ({ ...current, [payer]: value ? String(value) : "" }));
+    setConfirmedCommonFund((current) => current === payer ? null : current);
   }
 
   function addExpense() {
@@ -520,9 +530,16 @@ export default function WeddingPlanner() {
                       <div className="actual-spending-person-title"><span>{person.label}</span><strong>{money.format(person.total)}</strong></div>
                       <div className="actual-spending-formula">
                         <small>직접 결제 {money.format(person.direct)}</small><i>+</i>
-                        <form className="actual-spending-entry" onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
-                          <label><span>공용금 입금 · 10만원 단위</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" step="100000" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} /></label>
-                          <button className={confirmedCommonFund === person.key ? "confirmed" : ""} type="submit">{confirmedCommonFund === person.key ? "완료" : "확인"}</button>
+                        <form className="actual-spending-entry" noValidate onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
+                          <div className="actual-spending-field">
+                            <span>공용금 입금 · 10만원 단위</span>
+                            <div className="common-fund-stepper">
+                              <button type="button" aria-label={`${person.label} 공용금 10만원 빼기`} onClick={() => stepCommonFundDraft(person.key, -1)}>−</button>
+                              <input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" step="100000" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} />
+                              <button type="button" aria-label={`${person.label} 공용금 10만원 더하기`} onClick={() => stepCommonFundDraft(person.key, 1)}>+</button>
+                            </div>
+                          </div>
+                          <button className={`actual-spending-confirm ${confirmedCommonFund === person.key ? "confirmed" : ""}`} type="submit">{confirmedCommonFund === person.key ? "완료" : "확인"}</button>
                         </form>
                       </div>
                     </article>

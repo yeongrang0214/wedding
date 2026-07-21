@@ -921,29 +921,49 @@ img {
   gap: 7px;
 }
 
-.actual-spending-entry label {
+.actual-spending-field {
   min-width: 0;
 }
 
-.actual-spending-entry label span {
+.actual-spending-field > span {
   display: block;
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 8px;
 }
 
-.actual-spending-entry input {
+.common-fund-stepper {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr) 25px;
+  align-items: stretch;
+  border-bottom: 1px solid var(--ink);
+}
+
+.common-fund-stepper input {
   width: 100%;
   padding: 5px 4px;
   border: 0;
-  border-bottom: 1px solid var(--ink);
   background: transparent;
   font-family: var(--serif);
   font-size: 14px;
   text-align: right;
 }
 
-.actual-spending-entry button {
+.common-fund-stepper button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--serif);
+  font-size: 15px;
+}
+
+.common-fund-stepper button:hover {
+  background: var(--sage);
+  color: var(--ink);
+}
+
+.actual-spending-confirm {
   min-width: 38px;
   padding: 6px 7px;
   border: 1px solid var(--ink);
@@ -952,8 +972,8 @@ img {
   font-size: 8px;
 }
 
-.actual-spending-entry button:hover,
-.actual-spending-entry button.confirmed {
+.actual-spending-confirm:hover,
+.actual-spending-confirm.confirmed {
   background: var(--sage-dark);
   border-color: var(--sage-dark);
 }
