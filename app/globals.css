@@ -189,6 +189,24 @@ img {
   background: var(--sage-dark);
 }
 
+.save-state-loading i,
+.save-state-saving i {
+  animation: save-pulse 900ms ease-in-out infinite alternate;
+}
+
+.save-state-offline {
+  color: var(--clay);
+}
+
+.save-state-offline i {
+  background: var(--clay);
+}
+
+@keyframes save-pulse {
+  from { opacity: 0.25; transform: scale(0.75); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
 .header-link {
   padding: 0;
   border: 0;

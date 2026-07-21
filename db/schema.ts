@@ -1,4 +1,7 @@
-// Intentionally empty by default.
-// Add Drizzle tables here when the site actually needs a database.
-// See examples/d1/db/schema.ts for an opt-in example.
-export {};
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export const plannerState = sqliteTable("planner_state", {
+  id: integer("id").primaryKey(),
+  data: text("data").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

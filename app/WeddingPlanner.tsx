@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Tab = "overview" | "budget" | "tasks";
+type SaveState = "loading" | "saving" | "saved" | "offline";
 type Expense = {
   id: string;
   category: string;
@@ -35,6 +36,13 @@ type PlannerData = {
 };
 
 const STORAGE_KEY = "wedding-planner-yss-v1";
+const SERVER_MIGRATION_KEY = "wedding-planner-server-migrated-v1";
+const saveStateLabels: Record<SaveState, string> = {
+  loading: "불러오는 중",
+  saving: "저장 중",
+  saved: "저장됨",
+  offline: "연결 확인",
+};
 
 const DEFAULT_DATA: PlannerData = {
   expenses: [
@@ -149,6 +157,7 @@ export default function WeddingPlanner() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [data, setData] = useState<PlannerData>(() => cloneDefault());
   const [ready, setReady] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("loading");
   const [notice, setNotice] = useState("");
   const [budgetQuery, setBudgetQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("전체");
@@ -158,24 +167,70 @@ export default function WeddingPlanner() {
   const [commonFundDraft, setCommonFundDraft] = useState<Record<keyof CommonFund, string>>({ sangwon: "", yeongrang: "" });
   const [confirmedCommonFund, setConfirmedCommonFund] = useState<keyof CommonFund | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveAttemptRef = useRef(0);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as PlannerData;
-        setData(normalizePlannerData(parsed));
+    let cancelled = false;
+
+    async function loadPlannerData() {
+      let localData: PlannerData | null = null;
+      try {
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored) localData = normalizePlannerData(JSON.parse(stored) as PlannerData);
+      } catch {
+        setNotice("브라우저에 남아 있는 이전 데이터를 읽지 못했습니다.");
       }
-    } catch {
-      setNotice("저장된 데이터를 읽지 못해 원본 엑셀 데이터로 시작했습니다.");
-    } finally {
+
+      try {
+        const response = await fetch("/api/planner", { cache: "no-store" });
+        if (!response.ok) throw new Error("load failed");
+        const result = await response.json() as { data: PlannerData | null };
+        const migrated = window.localStorage.getItem(SERVER_MIGRATION_KEY) === "1";
+        const nextData = localData && !migrated
+          ? localData
+          : result.data
+            ? normalizePlannerData(result.data)
+            : localData || cloneDefault();
+        if (cancelled) return;
+        setData(nextData);
+        setSaveState(localData && !migrated ? "saving" : result.data ? "saved" : "saving");
+      } catch {
+        if (cancelled) return;
+        setData(localData || cloneDefault());
+        setSaveState("offline");
+        setNotice("사이트 저장소 연결을 확인하고 있습니다. 입력 내용은 이 브라우저에도 안전하게 보관됩니다.");
+      }
       setReady(true);
     }
+
+    void loadPlannerData();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const attempt = ++saveAttemptRef.current;
+    const snapshot = JSON.stringify(data);
+    setSaveState("saving");
+    const timeout = window.setTimeout(() => {
+      saveQueueRef.current = saveQueueRef.current
+        .then(async () => {
+          const response = await fetch("/api/planner", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: snapshot,
+          });
+          if (!response.ok) throw new Error("save failed");
+          window.localStorage.setItem(SERVER_MIGRATION_KEY, "1");
+          if (attempt === saveAttemptRef.current) setSaveState("saved");
+        })
+        .catch(() => {
+          if (attempt === saveAttemptRef.current) setSaveState("offline");
+        });
+    }, 650);
+    return () => window.clearTimeout(timeout);
   }, [data, ready]);
 
   useEffect(() => {
@@ -402,9 +457,9 @@ export default function WeddingPlanner() {
   }
 
   function resetData() {
-    if (!window.confirm("현재 수정한 내용을 지우고 원본 엑셀 데이터로 돌아갈까요?")) return;
+    if (!window.confirm("사이트에 저장된 현재 내용을 모두 지우고 초기 데이터로 돌아갈까요?")) return;
     setData(cloneDefault());
-    setNotice("원본 엑셀 데이터로 복원했습니다.");
+    setNotice("초기 데이터로 복원했습니다.");
   }
 
   return (
@@ -422,7 +477,7 @@ export default function WeddingPlanner() {
           ))}
         </nav>
         <div className="header-actions">
-          <span className="save-state"><i /> {ready ? "SAVED" : "LOADING"}</span>
+          <span className={`save-state save-state-${saveState}`}><i /> {saveStateLabels[saveState]}</span>
           <button className="header-link" onClick={downloadBackup}>백업</button>
           <button className="header-link" onClick={() => fileInputRef.current?.click()}>불러오기</button>
           <input ref={fileInputRef} className="sr-only" type="file" accept=".json,application/json" onChange={importBackup} />
@@ -736,7 +791,7 @@ export default function WeddingPlanner() {
             </section>
           )}
 
-          <footer className="footer"><span>영냥 × 상뭉의 결혼 준비실</span><div><button onClick={resetData}>원본 데이터로 복원</button><span>·</span><span>변경 내용은 현재 브라우저에 저장됩니다.</span></div></footer>
+          <footer className="footer"><span>영냥 × 상뭉의 결혼 준비실</span><div><button onClick={resetData}>전체 데이터 초기화</button><span>·</span><span>변경 내용은 사이트에 자동 저장됩니다.</span></div></footer>
         </section>
       </div>
     </main>

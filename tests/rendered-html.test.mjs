@@ -40,15 +40,23 @@ test("server-renders the wedding archive", async () => {
   assert.match(html, /<meta property="og:image" content="http:\/\/localhost:3000\/og\.png"/);
 });
 
-test("keeps editing, backup, and responsive design capabilities", async () => {
-  const [planner, css, page, layout] = await Promise.all([
+test("keeps editing, durable storage, backup, and responsive design capabilities", async () => {
+  const [planner, css, page, layout, apiRoute, dbHelper, schema, hosting] = await Promise.all([
     readFile(new URL("../app/WeddingPlanner.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/planner/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/planner.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
   ]);
 
   assert.match(planner, /localStorage\.setItem/);
+  assert.match(planner, /fetch\("\/api\/planner"/);
+  assert.match(planner, /SERVER_MIGRATION_KEY/);
+  assert.match(planner, /saveQueueRef/);
+  assert.match(planner, /사이트에 자동 저장됩니다/);
   assert.match(planner, /downloadBackup/);
   assert.match(planner, /importBackup/);
   assert.match(planner, /addExpense/);
@@ -91,7 +99,14 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(css, /calendar-day\.has-open/);
   assert.match(css, /calendar-day\.all-complete/);
   assert.match(css, /actual-spending-summary/);
+  assert.match(css, /save-state-offline/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.match(apiRoute, /readPlannerState/);
+  assert.match(apiRoute, /writePlannerState/);
+  assert.match(dbHelper, /CREATE TABLE IF NOT EXISTS planner_state/);
+  assert.match(dbHelper, /ON CONFLICT\(id\) DO UPDATE/);
+  assert.match(schema, /sqliteTable\("planner_state"/);
+  assert.match(hosting, /"d1": "DB"/);
   assert.match(page, /영냥 × 상뭉의 웨딩 아카이브/);
   assert.match(layout, /summary_large_image/);
 
