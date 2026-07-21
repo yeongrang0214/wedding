@@ -272,58 +272,52 @@ export default function WeddingPlanner() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">Y·S</span>
-          <div>
-            <p className="eyebrow">영냥 × 상뭉</p>
-            <h1>우리의 결혼 준비실</h1>
-          </div>
-        </div>
+        <button className="brand-lockup" type="button" onClick={() => setActiveTab("overview")} aria-label="홈으로 이동">
+          <span className="brand-caption">YEONGNYANG &amp; SANGMUNG</span>
+          <span className="brand-mark" aria-hidden="true">y&amp;s</span>
+        </button>
+        <nav className="tab-list" role="tablist" aria-label="결혼 준비 메뉴">
+          {tabItems.map((tab) => (
+            <button key={tab.id} className={`tab-button ${activeTab === tab.id ? "active" : ""}`} role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>
+              <span>{tab.label}</span><small>{tab.hint}</small>
+            </button>
+          ))}
+        </nav>
         <div className="header-actions">
-          <span className="save-state"><i /> {ready ? "이 브라우저에 자동 저장" : "데이터 불러오는 중"}</span>
-          <button className="button secondary" onClick={downloadBackup}>백업 저장</button>
-          <button className="button secondary" onClick={() => fileInputRef.current?.click()}>백업 불러오기</button>
+          <span className="save-state"><i /> {ready ? "SAVED" : "LOADING"}</span>
+          <button className="header-link" onClick={downloadBackup}>백업</button>
+          <button className="header-link" onClick={() => fileInputRef.current?.click()}>불러오기</button>
           <input ref={fileInputRef} className="sr-only" type="file" accept=".json,application/json" onChange={importBackup} />
         </div>
       </header>
 
       <div className="workspace">
-        <aside className="sidebar">
-          <p className="sidebar-label">준비 메뉴</p>
-          <nav className="tab-list" role="tablist" aria-label="결혼 준비 메뉴">
-            {tabItems.map((tab) => (
-              <button key={tab.id} className={`tab-button ${activeTab === tab.id ? "active" : ""}`} role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>
-                <span>{tab.label}</span><small>{tab.hint}</small>
-              </button>
-            ))}
-          </nav>
-          <div className="sidebar-note">
-            <span>원본</span>
-            <strong>결혼 시트.xlsx</strong>
-            <p>실사용 4개 시트의 내용을 반영했어요.</p>
-          </div>
-        </aside>
-
         <section className="content" role="tabpanel">
           {notice && <div className="notice"><span>{notice}</span><button aria-label="알림 닫기" onClick={() => setNotice("")}>×</button></div>}
 
           {activeTab === "overview" && (
             <>
               <section className="hero-panel">
-                <div className="hero-copy">
-                  <span className="source-badge">원본 엑셀 반영 완료</span>
-                  <h2>복잡한 준비는<br /><em>가볍게, 한곳에서.</em></h2>
-                  <p>예산과 선결제, 남은 잔금, 체크리스트까지 엑셀에 정리하던 방식 그대로 이어갈 수 있어요.</p>
-                  <div className="hero-actions">
-                    <button className="button primary" onClick={addExpense}>+  지출 항목 추가</button>
-                    <button className="button ghost" onClick={addTask}>+  할 일 추가</button>
+                <figure className="hero-visual">
+                  <img src="/wedding-editorial-hero.png" alt="햇살이 드는 나무 테이블 위 청첩장 종이와 반지 상자, 창밖의 초록 정원" />
+                  <figcaption><span>OUR WEDDING ARCHIVE</span><span>2026 — FOREVER</span></figcaption>
+                </figure>
+                <div className="hero-editorial">
+                  <div className="hero-copy">
+                    <span className="source-badge">영냥 × 상뭉의 결혼 기록</span>
+                    <h2>우리 둘의 계절을<br /><em>차분히 준비하는 기록.</em></h2>
+                    <p>예산과 일정, 마음에 남은 후보들을 한곳에 모았습니다. 엑셀에서 시작한 계획을 우리다운 속도로 계속 이어가요.</p>
+                    <div className="hero-actions">
+                      <button className="button primary" onClick={addExpense}>지출 항목 추가</button>
+                      <button className="button ghost" onClick={addTask}>할 일 추가</button>
+                    </div>
                   </div>
-                </div>
-                <div className="hero-total">
-                  <span>현재 총 예산</span>
-                  <strong>{money.format(totals.total)}</strong>
-                  <div className="progress-track"><div style={{ width: `${paidProgress}%` }} /></div>
-                  <div className="progress-caption"><span>선결제 {paidProgress}%</span><b>{money.format(totals.paid)}</b></div>
+                  <div className="hero-total">
+                    <span>PLANNED BUDGET</span>
+                    <strong>{money.format(totals.total)}</strong>
+                    <div className="progress-track"><div style={{ width: `${paidProgress}%` }} /></div>
+                    <div className="progress-caption"><span>선결제 {paidProgress}%</span><b>{money.format(totals.paid)}</b></div>
+                  </div>
                 </div>
               </section>
 
@@ -360,8 +354,8 @@ export default function WeddingPlanner() {
               </section>
 
               <section className="insight-strip">
-                <span className="insight-number">01</span>
-                <div><small>비교 메모</small><strong>{cheapestVenue?.name || "식장 후보"}가 현재 입력값 기준 가장 작은 예산이에요.</strong></div>
+                <span className="insight-number">NOTE 01</span>
+                <div><small>OUR SHORTLIST</small><strong>{cheapestVenue?.name || "식장 후보"}가 현재 입력값 기준 가장 작은 예산이에요.</strong></div>
                 <span className="insight-value">{cheapestVenue ? money.format(cheapestVenue.total) : "-"}</span>
               </section>
             </>
