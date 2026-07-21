@@ -66,11 +66,18 @@ test("keeps editing, backup, and responsive design capabilities", async () => {
   assert.match(planner, /remainingOverview/);
   assert.match(planner, /남은 준비 한눈에/);
   assert.match(planner, /가장 가까운 일정/);
+  assert.match(planner, /WEDDING CALENDAR/);
+  assert.match(planner, /calendarOverview/);
+  assert.match(planner, /calendar-date-number/);
+  assert.match(planner, /setSelectedCalendarDate/);
+  assert.match(planner, /이 날짜에 할 일 추가/);
   assert.match(planner, /addTask/);
   assert.doesNotMatch(planner, /activeTab === "compare"/);
   assert.doesNotMatch(planner, /updateVenue|updateRingChoice/);
   assert.match(planner, /\/wedding-editorial-hero\.png/);
   assert.match(css, /@media \(max-width: 760px\)/);
+  assert.match(css, /calendar-day\.has-open/);
+  assert.match(css, /calendar-day\.all-complete/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(page, /영냥 × 상뭉의 웨딩 아카이브/);
   assert.match(layout, /summary_large_image/);

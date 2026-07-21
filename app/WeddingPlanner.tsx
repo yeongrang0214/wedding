@@ -87,8 +87,10 @@ const cloneDefault = () => JSON.parse(JSON.stringify(DEFAULT_DATA)) as PlannerDa
 const money = new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("ko-KR");
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const WEDDING_YEAR = 2026;
 const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1);
-const daysInMonth = (month: number | "") => month ? [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] : 31;
+const weekdayLabels = ["일", "월", "화", "수", "목", "금", "토"];
+const daysInMonth = (month: number | "") => month ? new Date(WEDDING_YEAR, month, 0).getDate() : 31;
 const dayOptions = (month: number | "") => Array.from({ length: daysInMonth(month) }, (_, index) => index + 1);
 const getTaskWeek = (day: number | "") => day ? Math.min(5, Math.ceil(day / 7)) : "";
 const representativeDayForWeek = (week: number | "" | undefined) => week ? Math.min(31, (week - 1) * 7 + 1) : "";
@@ -135,6 +137,8 @@ export default function WeddingPlanner() {
   const [budgetQuery, setBudgetQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "done">("all");
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth() + 1);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<{ month: number; day: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -203,8 +207,12 @@ export default function WeddingPlanner() {
   }, [visibleExpenses]);
 
   const visibleTasks = useMemo(
-    () => data.tasks.filter((task) => taskFilter === "all" || (taskFilter === "done" ? task.done : !task.done)),
-    [data.tasks, taskFilter],
+    () => data.tasks.filter((task) => {
+      const statusMatch = taskFilter === "all" || (taskFilter === "done" ? task.done : !task.done);
+      const dateMatch = !selectedCalendarDate || (task.month === selectedCalendarDate.month && task.day === selectedCalendarDate.day);
+      return statusMatch && dateMatch;
+    }),
+    [data.tasks, selectedCalendarDate, taskFilter],
   );
 
   const taskGroups = useMemo(() => {
@@ -241,6 +249,24 @@ export default function WeddingPlanner() {
     });
     return { tasks, next: tasks[0] || null, owners, groups: [...grouped.values()] };
   }, [data.tasks]);
+
+  const calendarOverview = useMemo(() => {
+    const tasksByDay = new Map<number, Task[]>();
+    data.tasks.filter((task) => task.month === calendarMonth && task.day).forEach((task) => {
+      const day = Number(task.day);
+      tasksByDay.set(day, [...(tasksByDay.get(day) || []), task]);
+    });
+    const firstWeekday = new Date(WEDDING_YEAR, calendarMonth - 1, 1).getDay();
+    const cells: Array<number | null> = [
+      ...Array.from({ length: firstWeekday }, () => null),
+      ...Array.from({ length: daysInMonth(calendarMonth) }, (_, index) => index + 1),
+    ];
+    const monthTasks = [...tasksByDay.values()].flat().sort((a, b) => Number(a.day || 99) - Number(b.day || 99));
+    const agendaTasks = selectedCalendarDate
+      ? tasksByDay.get(selectedCalendarDate.day) || []
+      : monthTasks;
+    return { tasksByDay, cells, monthTasks, agendaTasks };
+  }, [calendarMonth, data.tasks, selectedCalendarDate]);
   const progress = totals.taskTotal ? Math.round((totals.taskDone / totals.taskTotal) * 100) : 0;
   const paidProgress = totals.total ? Math.min(100, Math.round((totals.paid / totals.total) * 100)) : 0;
 
@@ -259,10 +285,15 @@ export default function WeddingPlanner() {
 
   function addTask() {
     const today = new Date();
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
+    const month = selectedCalendarDate?.month || today.getMonth() + 1;
+    const day = selectedCalendarDate?.day || today.getDate();
     setData((current) => ({ ...current, tasks: [{ id: uid("t"), title: "새 할 일", category: "준비", owner: "공용", month, day, due: "", done: false }, ...current.tasks] }));
     setActiveTab("tasks");
+  }
+
+  function moveCalendarMonth(offset: number) {
+    setCalendarMonth((current) => ((current - 1 + offset + 12) % 12) + 1);
+    setSelectedCalendarDate(null);
   }
 
   function updateTaskMonth(id: string, month: number | "") {
@@ -479,6 +510,64 @@ export default function WeddingPlanner() {
                 <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
                 <div><span>준비 진행률</span><strong>{totals.taskDone}개 완료, {totals.taskTotal - totals.taskDone}개 남았어요</strong><div className="progress-track wide"><div style={{ width: `${progress}%` }} /></div></div>
               </div>
+              <section className="task-calendar" aria-labelledby="task-calendar-title">
+                <header className="calendar-header">
+                  <div><span className="section-kicker">WEDDING CALENDAR</span><h3 id="task-calendar-title">일정 캘린더</h3></div>
+                  <div className="calendar-controls">
+                    <button aria-label="이전 달" onClick={() => moveCalendarMonth(-1)}>←</button>
+                    <strong>{WEDDING_YEAR}. {String(calendarMonth).padStart(2, "0")}</strong>
+                    <button aria-label="다음 달" onClick={() => moveCalendarMonth(1)}>→</button>
+                  </div>
+                  <div className="calendar-legend"><span><i className="open" />미완료</span><span><i className="complete" />완료</span></div>
+                </header>
+                <div className="calendar-layout">
+                  <div className="calendar-board">
+                    <div className="calendar-weekdays">{weekdayLabels.map((label) => <span key={label}>{label}</span>)}</div>
+                    <div className="calendar-grid">
+                      {calendarOverview.cells.map((day, index) => {
+                        if (!day) return <span className="calendar-empty-day" key={`empty-${index}`} />;
+                        const dayTasks = calendarOverview.tasksByDay.get(day) || [];
+                        const hasOpen = dayTasks.some((task) => !task.done);
+                        const hasComplete = dayTasks.some((task) => task.done);
+                        const selected = selectedCalendarDate?.month === calendarMonth && selectedCalendarDate.day === day;
+                        return (
+                          <button
+                            className={`calendar-day ${dayTasks.length ? "has-tasks" : ""} ${hasOpen ? "has-open" : ""} ${hasComplete && !hasOpen ? "all-complete" : ""} ${selected ? "selected" : ""}`}
+                            key={day}
+                            aria-label={`${calendarMonth}월 ${day}일, 일정 ${dayTasks.length}개`}
+                            aria-pressed={selected}
+                            onClick={() => setSelectedCalendarDate((current) => current?.month === calendarMonth && current.day === day ? null : { month: calendarMonth, day })}
+                          >
+                            <span className="calendar-date-number">{day}</span>
+                            {dayTasks.length > 1 && <small>{dayTasks.length}</small>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <aside className="calendar-agenda" aria-live="polite">
+                    <div className="calendar-agenda-heading">
+                      <div><span>{selectedCalendarDate ? "선택한 날짜" : "이번 달 일정"}</span><h4>{selectedCalendarDate ? `${selectedCalendarDate.month}월 ${selectedCalendarDate.day}일` : `${calendarMonth}월`}</h4></div>
+                      <div><b>{calendarOverview.agendaTasks.length}개</b>{selectedCalendarDate && <button onClick={() => setSelectedCalendarDate(null)}>전체 보기</button>}</div>
+                    </div>
+                    <div className="calendar-agenda-list">
+                      {calendarOverview.agendaTasks.map((task) => (
+                        <button className={`calendar-agenda-item ${task.done ? "done" : ""}`} key={task.id} onClick={() => updateTask(task.id, "done", !task.done)}>
+                          <span className="calendar-agenda-check" />
+                          <span><strong>{task.title}</strong><small>{task.day}일 · {task.owner}{task.due ? ` · ${task.due}` : ""}</small></span>
+                        </button>
+                      ))}
+                      {!calendarOverview.agendaTasks.length && (
+                        <div className="calendar-agenda-empty">
+                          <strong>등록된 일정이 없어요.</strong>
+                          <span>{selectedCalendarDate ? "선택한 날짜에 새 할 일을 추가해 보세요." : "날짜를 선택하면 그날의 일정을 볼 수 있어요."}</span>
+                          {selectedCalendarDate && <button className="button secondary" onClick={addTask}>이 날짜에 할 일 추가</button>}
+                        </div>
+                      )}
+                    </div>
+                  </aside>
+                </div>
+              </section>
               <section className="remaining-overview" aria-labelledby="remaining-overview-title">
                 <div className="remaining-overview-heading">
                   <div><span className="section-kicker">AT A GLANCE</span><h3 id="remaining-overview-title">남은 준비 한눈에</h3></div>
@@ -546,6 +635,13 @@ export default function WeddingPlanner() {
                     </section>
                   );
                 })}
+                {!taskGroups.length && (
+                  <div className="task-schedule-empty">
+                    <strong>{selectedCalendarDate ? `${selectedCalendarDate.month}월 ${selectedCalendarDate.day}일에 표시할 일정이 없어요.` : "표시할 일정이 없어요."}</strong>
+                    <span>{selectedCalendarDate ? "새 할 일을 추가하거나 전체 보기를 눌러주세요." : "필터를 변경하거나 새 할 일을 추가해 주세요."}</span>
+                    {selectedCalendarDate && <button className="button secondary" onClick={addTask}>이 날짜에 할 일 추가</button>}
+                  </div>
+                )}
               </div>
             </section>
           )}
