@@ -53,11 +53,12 @@ npm test
 4. Framework Preset은 **Next.js**, Root Directory는 저장소 루트로 둡니다.
 5. Vercel Marketplace에서 **Neon Postgres**를 프로젝트에 연결합니다.
 6. 프로젝트의 Environment Variables에 `DATABASE_URL`이 등록됐는지 확인합니다.
-7. 배포하거나, 데이터베이스를 나중에 연결했다면 한 번 Redeploy 합니다.
-8. 새 사이트에서 `불러오기`로 1번의 JSON 백업을 선택한 뒤 `예산·지출 저장` 또는 `할 일 저장`을 누릅니다.
+7. `SITE_PASSWORD`에 홈페이지에서 함께 사용할 비밀번호를 등록합니다.
+8. 배포하거나, 환경 변수를 나중에 연결했다면 한 번 Redeploy 합니다.
+9. 새 사이트에서 `불러오기`로 1번의 JSON 백업을 선택한 뒤 `예산·지출 저장` 또는 `할 일 저장`을 누릅니다.
 
 데이터베이스 테이블은 첫 저장 요청에서 자동으로 준비됩니다. `drizzle/`의 SQL은 스키마 이력을 위한 파일입니다.
 
 ## 개인정보 보호
 
-예산과 결제 정보가 포함되어 있으므로 Vercel의 Deployment Protection을 켜거나 별도의 인증을 적용하는 것을 권장합니다. 실제 `DATABASE_URL`은 GitHub에 커밋하지 말고 Vercel 환경 변수에만 저장하세요.
+홈페이지 전체는 Vercel의 `SITE_PASSWORD` 환경 변수와 암호화된 HTTP 전용 쿠키로 보호됩니다. 실제 `SITE_PASSWORD`와 `DATABASE_URL`은 GitHub에 커밋하지 말고 Vercel 환경 변수에만 저장하세요. 공용 기기에서는 상단의 `잠금` 버튼을 눌러 세션을 종료하세요.

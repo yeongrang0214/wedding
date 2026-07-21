@@ -502,6 +502,14 @@ export default function WeddingPlanner() {
     setNotice("초기 데이터로 복원했습니다.");
   }
 
+  async function lockSite() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.replace("/login");
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -521,6 +529,7 @@ export default function WeddingPlanner() {
           <span className={`save-state save-state-${saveState}`}><i /> {saveStateLabels[saveState]}</span>
           <button className="header-link" onClick={downloadBackup}>백업</button>
           <button className="header-link" onClick={() => fileInputRef.current?.click()}>불러오기</button>
+          <button className="header-link" onClick={lockSite}>잠금</button>
           <input ref={fileInputRef} className="sr-only" type="file" accept=".json,application/json" onChange={importBackup} />
         </div>
       </header>

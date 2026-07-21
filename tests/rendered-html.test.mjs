@@ -37,11 +37,15 @@ test("is configured as a standard Next.js project for Vercel", async () => {
 });
 
 test("keeps wedding editing, durable saves, backup, and responsive design", async () => {
-  const [planner, css, page, layout] = await Promise.all([
+  const [planner, css, page, layout, proxy, loginRoute, loginPage, envExample] = await Promise.all([
     readFile(new URL("../app/WeddingPlanner.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../proxy.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/auth/login/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/login/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
   ]);
 
   assert.match(planner, /fetch\("\/api\/planner"/);
@@ -61,6 +65,13 @@ test("keeps wedding editing, durable saves, backup, and responsive design", asyn
   assert.match(css, /prefers-reduced-motion/);
   assert.match(page, /영냥 × 상뭉의 웨딩 아카이브/);
   assert.match(layout, /summary_large_image/);
+  assert.match(planner, /lockSite/);
+  assert.match(proxy, /SITE_PASSWORD/);
+  assert.match(proxy, /AUTH_COOKIE_NAME/);
+  assert.match(loginRoute, /httpOnly: true/);
+  assert.match(loginRoute, /constantTimeEqual/);
+  assert.match(loginPage, /우리 둘의 기록입니다/);
+  assert.match(envExample, /SITE_PASSWORD=/);
 
   await Promise.all([
     access(new URL("../public/wedding-editorial-hero.png", import.meta.url)),
