@@ -521,7 +521,7 @@ export default function WeddingPlanner() {
                       <div className="actual-spending-formula">
                         <small>직접 결제 {money.format(person.direct)}</small><i>+</i>
                         <form className="actual-spending-entry" onSubmit={(event) => { event.preventDefault(); confirmCommonFund(person.key); }}>
-                          <label><span>공용금 입금</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} /></label>
+                          <label><span>공용금 입금 · 10만원 단위</span><input aria-label={`${person.label} 공용금 입금액`} type="number" min="0" step="100000" inputMode="numeric" value={commonFundDraft[person.key]} placeholder="0" onChange={(event) => { setCommonFundDraft((current) => ({ ...current, [person.key]: event.target.value })); setConfirmedCommonFund((current) => current === person.key ? null : current); }} /></label>
                           <button className={confirmedCommonFund === person.key ? "confirmed" : ""} type="submit">{confirmedCommonFund === person.key ? "완료" : "확인"}</button>
                         </form>
                       </div>
