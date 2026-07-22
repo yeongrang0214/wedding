@@ -36,8 +36,8 @@ test("is configured as a standard Next.js project for Vercel", async () => {
   await assert.rejects(access(new URL("../vite.config.ts", import.meta.url)));
 });
 
-test("keeps wedding editing, durable saves, backup, and responsive design", async () => {
-  const [planner, css, page, layout, proxy, loginRoute, loginPage, envExample] = await Promise.all([
+test("keeps wedding editing, durable saves, backup, responsive design, and installable PWA support", async () => {
+  const [planner, css, page, layout, proxy, loginRoute, loginPage, envExample, manifest, pwaManager, serviceWorker] = await Promise.all([
     readFile(new URL("../app/WeddingPlanner.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -46,6 +46,9 @@ test("keeps wedding editing, durable saves, backup, and responsive design", asyn
     readFile(new URL("../app/api/auth/login/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/login/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    readFile(new URL("../app/manifest.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/PwaManager.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(planner, /fetch\("\/api\/planner"/);
@@ -72,9 +75,19 @@ test("keeps wedding editing, durable saves, backup, and responsive design", asyn
   assert.match(loginRoute, /constantTimeEqual/);
   assert.match(loginPage, /우리 둘의 기록입니다/);
   assert.match(envExample, /SITE_PASSWORD=/);
+  assert.match(manifest, /display: "standalone"/);
+  assert.match(manifest, /icon-maskable-512\.png/);
+  assert.match(pwaManager, /beforeinstallprompt/);
+  assert.match(pwaManager, /serviceWorker\.register/);
+  assert.doesNotMatch(serviceWorker, /caches\.match\(request\).*api\//s);
+  assert.match(serviceWorker, /url\.pathname\.startsWith\("\/api\/"\)/);
 
   await Promise.all([
     access(new URL("../public/wedding-editorial-hero.png", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
+    access(new URL("../public/icons/icon-192.png", import.meta.url)),
+    access(new URL("../public/icons/icon-512.png", import.meta.url)),
+    access(new URL("../public/icons/icon-maskable-512.png", import.meta.url)),
+    access(new URL("../public/icons/apple-touch-icon.png", import.meta.url)),
   ]);
 });

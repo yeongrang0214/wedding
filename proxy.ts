@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, constantTimeEqual, createAccessToken } from "./lib/site-auth";
 
-const PUBLIC_PATHS = new Set(["/login", "/api/auth/login", "/favicon.ico"]);
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/favicon.ico",
+  "/favicon.svg",
+  "/manifest.webmanifest",
+  "/sw.js",
+]);
 
 function isPublicPath(pathname: string) {
   return (
     PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/icons/") ||
     pathname.startsWith("/wedding-editorial-hero.png") ||
     pathname.startsWith("/og.png")
   );

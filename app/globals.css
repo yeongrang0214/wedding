@@ -407,6 +407,84 @@ img {
   color: white;
 }
 
+.pwa-install-button {
+  position: fixed;
+  z-index: 65;
+  right: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 8px 24px rgba(23, 24, 20, 0.16);
+  color: white;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.pwa-install-button:hover {
+  border-color: var(--sage-dark);
+  background: var(--sage-dark);
+}
+
+.pwa-install-button span {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.pwa-guide-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(23, 24, 20, 0.48);
+  backdrop-filter: blur(5px);
+}
+
+.pwa-guide {
+  width: min(440px, 100%);
+  padding: 34px;
+  border: 1px solid var(--line);
+  background: var(--paper-bright);
+}
+
+.pwa-guide-caption {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.pwa-guide h2 {
+  margin: 18px 0 22px;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.pwa-guide ol {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 28px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pwa-guide button {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+}
+
 @media (max-width: 760px) {
   .login-page {
     padding: 0;
@@ -438,6 +516,15 @@ img {
   .login-image {
     min-height: 38vh;
     order: -1;
+  }
+
+  .pwa-install-button {
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .pwa-guide {
+    padding: 28px 24px;
   }
 }
 
