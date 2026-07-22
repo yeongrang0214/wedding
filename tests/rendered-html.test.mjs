@@ -79,6 +79,10 @@ test("keeps wedding editing, durable saves, backup, responsive design, and insta
   assert.match(manifest, /icon-maskable-512\.png/);
   assert.match(pwaManager, /beforeinstallprompt/);
   assert.match(pwaManager, /serviceWorker\.register/);
+  assert.match(pwaManager, /동작 편집/);
+  assert.match(pwaManager, /Safari에서 열어주세요/);
+  assert.match(css, /@media \(max-width: 430px\)/);
+  assert.match(css, /safe-area-inset-top/);
   assert.doesNotMatch(serviceWorker, /caches\.match\(request\).*api\//s);
   assert.match(serviceWorker, /url\.pathname\.startsWith\("\/api\/"\)/);
 
